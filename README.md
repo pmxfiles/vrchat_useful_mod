@@ -11,5 +11,6 @@ Features of this mod;
 - Anti-portal (lobby wide)
 - Player pill ESP
 - Teleport to player in social or on selection
+- Enables jumping where jumping is disabled by the mapper
 
 Enjoy. (C# sucks major ****)
