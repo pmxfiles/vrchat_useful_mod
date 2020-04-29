@@ -37,6 +37,7 @@ namespace TestMod
         public static bool esp_players = false;
         public static bool info_plus_toggle = false;
         public static bool show_blocked_avatar = false;
+        public static bool speed_hacks = false;
 
         public static bool sub_menu_open = false;
         public static GameObject sub_menu = null;
@@ -433,7 +434,7 @@ namespace TestMod
 
                 sub_menu = make_blank_page("sub_menu");
 
-                var menubutton = ButtonAPI.CreateButton(false, ButtonType.Default, "Open menu", "Testmenu", Color.white, Color.red, 1, 1, shortcutmenu,
+                var menubutton = ButtonAPI.CreateButton(false, ButtonType.Default, "Open menu", "Testmenu", Color.white, Color.red, -4, 3, shortcutmenu,
                 new Action(() =>
                 {
                     sub_menu_open = true;
@@ -557,6 +558,28 @@ namespace TestMod
                         text_object.supportRichText = true;
                         text_object_2.text = $"{user.field_APIUser_0.displayName}";
                         text_object.text = $"{user.field_APIUser_0.displayName}";
+                    }
+                }));
+
+                var speedhack = ButtonAPI.CreateButton(false, ButtonType.Toggle, "Speedhack", "Sets your player speeds a bit higher than usual", Color.white, Color.red, -1, 0, sub_menu.transform,
+                new Action(() =>
+                {
+                    var locomotion = VRCPlayer.field_VRCPlayer_0.GetComponent<LocomotionInputController>();
+                    if (locomotion != null)
+                    {
+                        /*speeds*/                        
+                        locomotion.runSpeed = 10f;
+                        locomotion.walkSpeed = 8f;
+                    }
+                }),
+                new Action(() =>
+                {
+                    var locomotion = VRCPlayer.field_VRCPlayer_0.GetComponent<LocomotionInputController>();
+                    if (locomotion != null)
+                    {
+                        /*speeds*/
+                        locomotion.runSpeed = 4f;
+                        locomotion.walkSpeed = 2f;
                     }
                 }));
 
