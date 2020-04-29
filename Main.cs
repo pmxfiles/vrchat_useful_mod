@@ -1,4 +1,4 @@
-﻿using Harmony;
+using Harmony;
 using MelonLoader;
 using NET_SDK;
 using NET_SDK.Harmony;
@@ -48,16 +48,7 @@ namespace TestMod
 
         public override void OnApplicationStart()
         {
-            MelonModLogger.Log("This mod provides many useful things");
-            MelonModLogger.Log("- Flying / NoClip (Oculus compatible, right thumbstick up/down) (Desktop Q & E)");
-            MelonModLogger.Log("- Force cloning (public)");
-            MelonModLogger.Log("- Clone button in social");
-            MelonModLogger.Log("- Asset log button (check melon log)");
-            MelonModLogger.Log("- Colored names (red=private/green=public avatar)");
-            MelonModLogger.Log("- Info+ which shows avatar status/blocked in social");
-            MelonModLogger.Log("- Anti-portal (lobby wide)");
-            MelonModLogger.Log("- Player pill ESP");
-            MelonModLogger.Log("- Teleport to player in social or on selection");
+
         }
 
         public override void OnLevelWasLoaded(int level)
@@ -117,60 +108,78 @@ namespace TestMod
             }
         }
 
+        static float last_routine;
+
         public override void OnUpdate()
         {
-            if (sub_menu_open)
+            if (sub_menu_open) menu_handler();
+            if (clone_mode) clone_check();
+            if (delete_portals) auto_delete_portals();
+            if (isNoclip || fly_mode) height_adjust();
+            if (Time.time > last_routine)
             {
-                var shortcutmenu = Wrappers.GetQuickMenu();
-                if (shortcutmenu != null && shortcutmenu.prop_Boolean_0 == false)
-                {
-                    sub_menu_open = false;
-                    sub_menu.SetActive(false);
-
-                    VRCUiManager.prop_VRCUiManager_0.Method_Public_Boolean_1(false);
-                }
+                last_routine = Time.time + 1;
+                if (show_blocked_social) info_plus();
+                if (esp_players) esp_player();                
             }
+        }
 
-            if (show_blocked_social)
+        private static void menu_handler()
+        {
+            var shortcutmenu = Wrappers.GetQuickMenu();
+            if (shortcutmenu != null && shortcutmenu.prop_Boolean_0 == false)
             {
-                var screens = GameObject.Find("Screens");
-                if (screens != null)
-                {
-                    var userinfo = screens.transform.Find("UserInfo");
-                    if (userinfo != null)
-                    {
-                        var userInfo = userinfo.transform.GetComponent<VRC.UI.PageUserInfo>();
-                        if (userInfo != null && userInfo.user != null)
-                        {
-                            var plr_Pmgr = Wrappers.GetPlayerManager();
-                            if (plr_Pmgr != null)
-                            {
-                                var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
-                                if (found_player != null && found_player.prop_APIUser_0 != null)
-                                {
-                                    bool isblocked = found_player.field_VRCPlayer_0.prop_Boolean_15;
-                                    var user_panel = userinfo.transform.Find("User Panel");
-                                    if (user_panel != null)
-                                    {
-                                        var name_text = user_panel.GetComponentInChildren<UnityEngine.UI.Text>();
-                                        name_text.supportRichText = true;
-                                        if (!isblocked)
-                                        {
-                                            if (found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public") name_text.text = $"{found_player.field_APIUser_0.displayName} | <color=red>Blocked</color> | <color=lime>Public</color>";
-                                            else name_text.text = $"{found_player.field_APIUser_0.displayName} | <color=red>Blocked</color> | <color=red>Private</color>";
-                                        }
-                                        else
-                                        {
-                                            if (found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public") name_text.text = $"{found_player.field_APIUser_0.displayName} | <color=lime>Public</color>";
-                                            else name_text.text = $"{found_player.field_APIUser_0.displayName} | <color=red>Private</color>";
-                                        }
+                sub_menu_open = false;
+                sub_menu.SetActive(false);
 
+                VRCUiManager.prop_VRCUiManager_0.Method_Public_Boolean_1(false);
+            }
+        }
+
+        private static void info_plus()
+        {
+            var screens = GameObject.Find("Screens");
+            if (screens != null)
+            {
+                var userinfo = screens.transform.Find("UserInfo");
+                if (userinfo != null)
+                {
+                    var userInfo = userinfo.transform.GetComponent<VRC.UI.PageUserInfo>();
+                    if (userInfo != null && userInfo.user != null)
+                    {
+                        var plr_Pmgr = Wrappers.GetPlayerManager();
+                        if (plr_Pmgr != null)
+                        {
+                            var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+                            if (found_player != null && found_player.prop_APIUser_0 != null)
+                            {
+                                bool isblocked = found_player.field_VRCPlayer_0.prop_Boolean_15;
+                                if (found_player.field_VRCPlayer_0 == null) return;
+                                var user_panel = userinfo.transform.Find("User Panel");
+                                if (user_panel != null)
+                                {
+                                    var name_text = user_panel.GetComponentInChildren<UnityEngine.UI.Text>();
+                                    if (name_text == null) return;
+                                    name_text.supportRichText = true;
+                                    if (!isblocked)
+                                    {
+                                        if (found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public") name_text.text = $"{found_player.field_APIUser_0.displayName.ToString()} | <color=red>Blocked</color> | <color=lime>Public</color>";
+                                        else name_text.text = $"{found_player.field_APIUser_0.displayName.ToString()} | <color=red>Blocked</color> | <color=red>Private</color>";
                                     }
+                                    else
+                                    {
+                                        if (found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public") name_text.text = $"{found_player.field_APIUser_0.displayName.ToString()} | <color=lime>Public</color>";
+                                        else name_text.text = $"{found_player.field_APIUser_0.displayName.ToString()} | <color=red>Private</color>";
+                                    }
+
                                 }
                             }
                         }
                     }
                 }
+            }
+            if (Wrappers.GetPlayerManager() != null && PlayerManager.field_PlayerManager_0 != null)
+            {
                 var users = Wrappers.GetPlayerManager().GetAllPlayers();
                 var self = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
                 if (self == null || users == null) return;
@@ -186,76 +195,75 @@ namespace TestMod
                     var text_object = canvas.GetComponent<UnityEngine.UI.Text>();
                     var text_object_2 = canvas_2.GetComponent<UnityEngine.UI.Text>();
                     if (text_object == null || text_object_2 == null || text_object.enabled == false) continue;
+                    if (user.field_APIUser_0 == null || user.prop_VRCAvatarManager_0 == null) continue;
+                    if (user.field_APIUser_0.displayName == null) continue;
+                    if (user.field_APIUser_0.displayName.Length <= 1) continue;
                     text_object.supportRichText = true;
                     text_object_2.text = "";
 
-                    if (user.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public") text_object.text = $"<color=lime>{user.field_APIUser_0.displayName}</color>";
-                    else text_object.text = $"<color=red>{user.field_APIUser_0.displayName}</color>";
+                    if (user.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public") text_object.text = $"<color=lime>{user.field_APIUser_0.displayName.ToString()}</color>";
+                    else text_object.text = $"<color=red>{user.field_APIUser_0.displayName.ToString()}</color>";
                 }
-
             }
+        }
 
-            if (clone_mode)
+        private static void clone_check()
+        {
+            if (Wrappers.GetQuickMenu() != null)
             {
-                //see if target avatar is actually public
-                if (Wrappers.GetQuickMenu() != null)
+                var screensmenu = Wrappers.GetQuickMenu().transform.Find("UserInteractMenu");
+                if (screensmenu != null && Wrappers.GetQuickMenu().field_APIUser_0 != null)
                 {
-                    var screensmenu = Wrappers.GetQuickMenu().transform.Find("UserInteractMenu");
-                    if (screensmenu != null && Wrappers.GetQuickMenu().field_APIUser_0 != null)
+                    var userInfo = Wrappers.GetQuickMenu().GetSelectedPlayer();
+                    if (userInfo != null && userInfo.prop_VRCAvatarManager_0 != null)
                     {
-                        var userInfo = Wrappers.GetQuickMenu().GetSelectedPlayer();
-                        if (userInfo != null && userInfo.prop_VRCAvatarManager_0 != null)
+                        UserInteractMenu userInteractMenu = Wrappers.GetUserInteractMenu();
+                        if (userInteractMenu != null && userInfo.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public")
                         {
-                            UserInteractMenu userInteractMenu = Wrappers.GetUserInteractMenu();
-                            if (userInteractMenu != null && userInfo.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus == "public")
-                            {
-                                userInteractMenu.cloneAvatarButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Clone\nReady!";
-                                userInteractMenu.cloneAvatarButton.interactable = true;
-                            }
-                            else
-                            {
-                                userInteractMenu.cloneAvatarButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Can't\nClone\nPrivate!";
-                                userInteractMenu.cloneAvatarButton.interactable = false;
-                            }
+                            userInteractMenu.cloneAvatarButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Clone\nReady!";
+                            userInteractMenu.cloneAvatarButton.interactable = true;
+                        }
+                        else
+                        {
+                            userInteractMenu.cloneAvatarButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Can't\nClone\nPrivate!";
+                            userInteractMenu.cloneAvatarButton.interactable = false;
                         }
                     }
                 }
             }
+        }
 
-            if (delete_portals) auto_delete_portals();
-
-            if (esp_players)
+        private static void esp_player()
+        {
+            GameObject[] array = GameObject.FindGameObjectsWithTag("Player");
+            for (int i = 0; i < array.Length; i++)
             {
-                GameObject[] array = GameObject.FindGameObjectsWithTag("Player");
-                for (int i = 0; i < array.Length; i++)
+                if (array[i].transform.Find("SelectRegion"))
                 {
-                    if (array[i].transform.Find("SelectRegion"))
-                    {
-                        array[i].transform.Find("SelectRegion").GetComponent<Renderer>().sharedMaterial.SetColor("_Color", Color.red);
-                        Wrappers.EnableOutline(HighlightsFX.prop_HighlightsFX_0, array[i].transform.Find("SelectRegion").GetComponent<Renderer>(), true);
-                    }
+                    array[i].transform.Find("SelectRegion").GetComponent<Renderer>().sharedMaterial.SetColor("_Color", Color.red);
+                    Wrappers.EnableOutline(HighlightsFX.prop_HighlightsFX_0, array[i].transform.Find("SelectRegion").GetComponent<Renderer>(), true);
                 }
             }
+        }
 
-            if (isNoclip)
+        private static void height_adjust()
+        {
+            if (Input.GetKeyDown(KeyCode.Q))
             {
-                if (Input.GetKeyDown(KeyCode.Q))
-                {
-                    fly_up = false;
-                    fly_down = !fly_down;
-                }
-                if (Input.GetKeyDown(KeyCode.E))
-                {
-                    fly_down = false;
-                    fly_up = !fly_up;
-                }
-
-                if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") < 0f) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
-                if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") > 0f) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
-
-                if (fly_down) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
-                if (fly_up) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
+                fly_up = false;
+                fly_down = !fly_down;
             }
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                fly_down = false;
+                fly_up = !fly_up;
+            }
+
+            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") < 0f) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
+            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") > 0f) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
+
+            if (fly_down) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
+            if (fly_up) VRCPlayer.field_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
         }
 
         public override void OnFixedUpdate()
@@ -294,6 +302,57 @@ namespace TestMod
             return tfmMenu.gameObject;
         }
 
+        public static void do_tp_to_social()
+        {
+            var menu = GameObject.Find("Screens").transform.Find("UserInfo");
+            var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
+            var plr_Pmgr = PlayerManager.Method_Public_21();
+            var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+            if (found_player == null)
+            {
+                MelonModLogger.Log("player could not be found");
+                return;
+            }
+            MelonModLogger.Log("target found " + found_player.field_APIUser_0.displayName.ToString());
+            var self = Wrappers.GetPlayerManager().GetCurrentPlayer(); 
+            if (self == null)
+            {
+                MelonModLogger.Log("local could not be found");
+                return;
+            }
+            MelonModLogger.Log("selfpos " + self.transform.position.x + " " + self.transform.position.y + " " + self.transform.position.z);
+            self.transform.position = found_player.transform.position;
+            self.transform.localPosition = found_player.transform.localPosition;
+            MelonModLogger.Log("done tp");
+        }
+
+        public static void do_clone_to_social()
+        {
+            var menu = GameObject.Find("Screens").transform.Find("UserInfo");
+            var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
+            var plr_Pmgr = PlayerManager.Method_Public_21();
+            var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+            if (found_player == null)
+            {
+                MelonModLogger.Log("player could not be found");
+                return;
+            }
+
+            if (found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus != "public")
+            {
+                MelonModLogger.Log("Avatar cloning failed, avatar is not public! (" + found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus + ")");
+                return;
+            }
+
+            MelonModLogger.Log("Attempting clone for user " + userInfo.user.displayName.ToString());
+
+            var avatar_menu = GameObject.Find("Screens").transform.Find("Avatar").GetComponent<VRC.UI.PageAvatar>();
+            avatar_menu.avatar.field_ApiAvatar_0 = found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0;
+            avatar_menu.ChangeToSelectedAvatar();
+
+            MelonModLogger.Log("Done!");
+        }
+
         public override void VRChat_OnUiManagerInit()
         {
             var shortcutmenu = Notorious.Wrappers.GetQuickMenu().transform.Find("ShortcutMenu");
@@ -317,14 +376,7 @@ namespace TestMod
                 clone_button.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
                 clone_button.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() =>
                 {
-                    screensmenu = GameObject.Find("Screens").transform.Find("UserInfo");
-                    var userInfo = screensmenu.transform.GetComponent<VRC.UI.PageUserInfo>();
-                    var plr_Pmgr = Wrappers.GetPlayerManager();
-                    var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
-                    if (found_player == null) return;
-                    var selfplayer = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
-                    selfplayer.transform.position = found_player.transform.position;
-
+                    do_tp_to_social();
                 }));
 
                 //
@@ -335,12 +387,15 @@ namespace TestMod
                 clone_button_getasset.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
                 clone_button_getasset.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() =>
                 {
-                    screensmenu = GameObject.Find("Screens").transform.Find("UserInfo");
-                    var userInfo = screensmenu.transform.GetComponent<VRC.UI.PageUserInfo>();
-                    var plr_Pmgr = Wrappers.GetPlayerManager();
+                    var menu = GameObject.Find("Screens").transform.Find("UserInfo");
+                    var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
+                    var plr_Pmgr = PlayerManager.Method_Public_21();
                     var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
-                    if (found_player == null) return;
-                    var selfplayer = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
+                    if (found_player == null)
+                    {
+                        MelonModLogger.Log("player could not be found id " + userInfo.user.id);
+                        return;
+                    }
 
                     MelonModLogger.Log("Asset for user " + userInfo.user.displayName + " -> " + found_player.field_VRCAvatarManager_0.field_ApiAvatar_0.assetUrl);
                 }));
@@ -351,29 +406,7 @@ namespace TestMod
                 clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
                 clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() =>
                 {
-                    screensmenu = GameObject.Find("Screens").transform.Find("UserInfo");
-                    var userInfo = screensmenu.transform.GetComponent<VRC.UI.PageUserInfo>();
-                    var plr_Pmgr = Wrappers.GetPlayerManager();
-                    var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
-                    if (found_player == null) return;
-                    var selfplayer = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
-                    var slef_uid = selfplayer.field_VRCPlayerApi_0.playerId;
-
-                    if (found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus != "public")
-                    {
-                        MelonModLogger.Log("Avatar cloning failed, avatar is not public! (" + found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0.releaseStatus + ")");
-                        return;
-                    }
-
-                    MelonModLogger.Log("Attempting clone for user " + userInfo.user.displayName);
-
-
-                    var avatar_menu = GameObject.Find("Screens").transform.Find("Avatar").GetComponent<VRC.UI.PageAvatar>();
-                    avatar_menu.avatar.field_ApiAvatar_0 = found_player.prop_VRCAvatarManager_0.field_ApiAvatar_0;
-                    avatar_menu.ChangeToSelectedAvatar();
-
-                    MelonModLogger.Log("Done!");
-
+                    do_clone_to_social();
                 }));
 
                 clone_button.transform.SetParent(screensmenu, false);
@@ -520,6 +553,8 @@ namespace TestMod
                     var player = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
                     var SelectedPlayer = Wrappers.GetQuickMenu().GetSelectedPlayer();
                     player.transform.position = SelectedPlayer.transform.position;
+                    player.transform.localPosition = SelectedPlayer.transform.localPosition;
+
                 }),
                 new Action(() =>
                 {
