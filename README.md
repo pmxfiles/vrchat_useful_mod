@@ -17,5 +17,6 @@ Features of this mod;
 - Enables jumping where jumping is disabled by the mapper
 - Auto-saves/loads options for ESP, Clone mode, AntiPortal, Info+
 - Unlocks desktop users FPS to 144
+- Speed-modifier for faster walking/running
 
 Enjoy. (C# sucks major ****)
