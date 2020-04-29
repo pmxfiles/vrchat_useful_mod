@@ -313,17 +313,14 @@ namespace TestMod
                 MelonModLogger.Log("player could not be found");
                 return;
             }
-            MelonModLogger.Log("target found " + found_player.field_APIUser_0.displayName.ToString());
             var self = Wrappers.GetPlayerManager().GetCurrentPlayer(); 
             if (self == null)
             {
                 MelonModLogger.Log("local could not be found");
                 return;
             }
-            MelonModLogger.Log("selfpos " + self.transform.position.x + " " + self.transform.position.y + " " + self.transform.position.z);
-            self.transform.position = found_player.transform.position;
             self.transform.localPosition = found_player.transform.localPosition;
-            MelonModLogger.Log("done tp");
+            MelonModLogger.Log("TP completed");
         }
 
         public static void do_clone_to_social()
@@ -552,7 +549,6 @@ namespace TestMod
                 {
                     var player = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
                     var SelectedPlayer = Wrappers.GetQuickMenu().GetSelectedPlayer();
-                    player.transform.position = SelectedPlayer.transform.position;
                     player.transform.localPosition = SelectedPlayer.transform.localPosition;
 
                 }),
