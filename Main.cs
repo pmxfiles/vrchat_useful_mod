@@ -4,6 +4,10 @@ using NET_SDK;
 using NET_SDK.Harmony;
 using NET_SDK.Reflection;
 using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -31,7 +35,7 @@ namespace TestMod
         public static bool clone_mode = true;
         public static bool delete_portals = false;
         public static bool esp_players = false;
-        public static bool show_blocked_social = false;
+        public static bool info_plus_toggle = false;
         public static bool show_blocked_avatar = false;
 
         public static bool sub_menu_open = false;
@@ -48,7 +52,12 @@ namespace TestMod
 
         public override void OnApplicationStart()
         {
+            var ini = new IniFile("hashcfg.ini");
 
+            if (ini.KeyExists("toggles", "clone")) clone_mode = bool.Parse(ini.Read("toggles", "clone"));
+            if (ini.KeyExists("toggles", "info_plus")) info_plus_toggle = bool.Parse(ini.Read("toggles", "info_plus"));
+            if (ini.KeyExists("toggles", "esp_player")) esp_players = bool.Parse(ini.Read("toggles", "esp_player"));
+            if (ini.KeyExists("toggles", "antiportal")) delete_portals = bool.Parse(ini.Read("toggles", "antiportal"));
         }
 
         public override void OnLevelWasLoaded(int level)
@@ -72,7 +81,7 @@ namespace TestMod
              });
         }
 
-        public void toggleNoclip()
+        public void noclip()
         {
             if (isNoclip) Physics.gravity = new Vector3(0, 0, 0);
             else Physics.gravity = new Vector3(0, -9.81f, 0);
@@ -119,7 +128,7 @@ namespace TestMod
             if (Time.time > last_routine)
             {
                 last_routine = Time.time + 1;
-                if (show_blocked_social) info_plus();
+                if (info_plus_toggle) info_plus();
                 if (esp_players) esp_player();                
             }
         }
@@ -133,6 +142,14 @@ namespace TestMod
                 sub_menu.SetActive(false);
 
                 VRCUiManager.prop_VRCUiManager_0.Method_Public_Boolean_1(false);
+
+                //handle config
+                var ini = new IniFile("hashcfg.ini");
+
+                ini.Write("toggles", "clone", clone_mode.ToString());
+                ini.Write("toggles", "info_plus", info_plus_toggle.ToString());
+                ini.Write("toggles", "esp_player", esp_players.ToString());
+                ini.Write("toggles", "antiportal", delete_portals.ToString());
             }
         }
 
@@ -178,11 +195,10 @@ namespace TestMod
                     }
                 }
             }
-            if (Wrappers.GetPlayerManager() != null && PlayerManager.field_PlayerManager_0 != null)
+            if (Wrappers.GetPlayerManager() != null && VRCPlayer.field_VRCPlayer_0 != null)
             {
-                var users = Wrappers.GetPlayerManager().GetAllPlayers();
-                var self = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
-                if (self == null || users == null) return;
+                var users = Wrappers.GetPlayerManager().GetAllPlayers();               
+                if (VRCPlayer.field_VRCPlayer_0 == null || users == null) return;
 
                 for (int i = 0; i < users.Count; i++)
                 {
@@ -417,7 +433,7 @@ namespace TestMod
 
                 sub_menu = make_blank_page("sub_menu");
 
-                var menubutton = ButtonAPI.CreateButton(ButtonType.Default, "Open menu", "Testmenu", Color.white, Color.red, 1, 1, shortcutmenu,
+                var menubutton = ButtonAPI.CreateButton(false, ButtonType.Default, "Open menu", "Testmenu", Color.white, Color.red, 1, 1, shortcutmenu,
                 new Action(() =>
                 {
                     sub_menu_open = true;
@@ -431,7 +447,7 @@ namespace TestMod
                     shortcutmenu.gameObject.SetActive(false);
                 }));
 
-                var button = ButtonAPI.CreateButton(ButtonType.Toggle, "Fly", "Flying mode pseudo bleh", Color.white, Color.red, -3, 1, sub_menu.transform,
+                var button = ButtonAPI.CreateButton(false, ButtonType.Toggle, "Fly", "Flying mode pseudo bleh", Color.white, Color.red, -3, 1, sub_menu.transform,
                 new Action(() =>
                 {
                     Physics.gravity = new Vector3(0, 0, 0);
@@ -441,19 +457,19 @@ namespace TestMod
                     Physics.gravity = new Vector3(0, -9.81f, 0);
                 }));
 
-                var no_collision = ButtonAPI.CreateButton(ButtonType.Toggle, "NoClip", "Disables collisions", Color.white, Color.red, -2, 1, sub_menu.transform,
+                var no_collision = ButtonAPI.CreateButton(false, ButtonType.Toggle, "NoClip", "Disables collisions", Color.white, Color.red, -2, 1, sub_menu.transform,
                 new Action(() =>
                 {
                     isNoclip = true;
-                    toggleNoclip();
+                    noclip();
                 }),
                 new Action(() =>
                 {
                     isNoclip = false;
-                    toggleNoclip();
+                    noclip();
                 }));
 
-                var jump_btn = ButtonAPI.CreateButton(ButtonType.Default, "YesJump", "Enables jumping", Color.white, Color.red, -3, 1, sub_menu.transform,
+                var jump_btn = ButtonAPI.CreateButton(false, ButtonType.Default, "YesJump", "Enables jumping", Color.white, Color.red, -3, 1, sub_menu.transform,
                 new Action(() =>
                 {
                     if (VRCPlayer.field_VRCPlayer_0.gameObject.GetComponent<PlayerModComponentJump>() == null) VRCPlayer.field_VRCPlayer_0.gameObject.AddComponent<PlayerModComponentJump>();
@@ -463,7 +479,7 @@ namespace TestMod
 
                 }));
 
-                var force_button_clone = ButtonAPI.CreateButton(ButtonType.Toggle, "ForceClone", "Enables the clone button always", Color.white, Color.red, -1, 1, sub_menu.transform,
+                var force_button_clone = ButtonAPI.CreateButton(clone_mode, ButtonType.Toggle, "ForceClone", "Enables the clone button always", Color.white, Color.red, -1, 1, sub_menu.transform,
                 new Action(() =>
                 {
                     clone_mode = true;
@@ -473,7 +489,7 @@ namespace TestMod
                     clone_mode = false;
                 }));
 
-                var esp_button = ButtonAPI.CreateButton(ButtonType.Toggle, "ESP", "Enables ESP for players", Color.white, Color.red, 0, 1, sub_menu.transform,
+                var esp_button = ButtonAPI.CreateButton(esp_players, ButtonType.Toggle, "ESP", "Enables ESP for players", Color.white, Color.red, 0, 1, sub_menu.transform,
                 new Action(() =>
                 {
                     esp_players = true;
@@ -504,7 +520,7 @@ namespace TestMod
                     }
                 }));
 
-                var portalbtn = ButtonAPI.CreateButton(ButtonType.Toggle, "AntiPortal", "Auto deletes portals spawned", Color.white, Color.red, -3, 0, sub_menu.transform,
+                var portalbtn = ButtonAPI.CreateButton(delete_portals, ButtonType.Toggle, "AntiPortal", "Auto deletes portals spawned", Color.white, Color.red, -3, 0, sub_menu.transform,
                 new Action(() =>
                 {
                     delete_portals = true;
@@ -514,14 +530,14 @@ namespace TestMod
                     delete_portals = false;
                 }));
 
-                var blockinfobutton = ButtonAPI.CreateButton(ButtonType.Toggle, "Info+", "Shows in social next to the user name\nif you were blocked by them", Color.white, Color.red, -2, 0, sub_menu.transform,
+                var blockinfobutton = ButtonAPI.CreateButton(info_plus_toggle, ButtonType.Toggle, "Info+", "Shows in social next to the user name\nif you were blocked by them", Color.white, Color.red, -2, 0, sub_menu.transform,
                 new Action(() =>
                 {
-                    show_blocked_social = true;
+                    info_plus_toggle = true;
                 }),
                 new Action(() =>
                 {
-                    show_blocked_social = false;
+                    info_plus_toggle = false;
 
                     var users = Wrappers.GetPlayerManager().GetAllPlayers();
                     var self = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
@@ -544,12 +560,12 @@ namespace TestMod
                     }
                 }));
 
-                var tp_to_user = ButtonAPI.CreateButton(ButtonType.Default, "Teleport", "Tps you to user selected", Color.white, Color.red, 0, 0, Wrappers.GetQuickMenu().transform.Find("UserInteractMenu"),
+                var tp_to_user = ButtonAPI.CreateButton(false, ButtonType.Default, "Teleport", "Tps you to user selected", Color.white, Color.red, 0, 0, Wrappers.GetQuickMenu().transform.Find("UserInteractMenu"),
                 new Action(() =>
                 {
                     var player = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
                     var SelectedPlayer = Wrappers.GetQuickMenu().GetSelectedPlayer();
-                    VRCPlayer.field_VRCPlayer_0.transform.position = SelectedPlayer.transform.position;
+                    VRCPlayer.field_VRCPlayer_0.transform.position = SelectedPlayer.transform.position;                    
 
                 }),
                 new Action(() =>
