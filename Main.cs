@@ -319,7 +319,7 @@ namespace TestMod
                 MelonModLogger.Log("local could not be found");
                 return;
             }
-            self.transform.localPosition = found_player.transform.localPosition;
+            VRCPlayer.field_VRCPlayer_0.transform.position = found_player.transform.position;
             MelonModLogger.Log("TP completed");
         }
 
@@ -549,7 +549,7 @@ namespace TestMod
                 {
                     var player = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_PlayerManager_0);
                     var SelectedPlayer = Wrappers.GetQuickMenu().GetSelectedPlayer();
-                    player.transform.localPosition = SelectedPlayer.transform.localPosition;
+                    VRCPlayer.field_VRCPlayer_0.transform.position = SelectedPlayer.transform.position;
 
                 }),
                 new Action(() =>
