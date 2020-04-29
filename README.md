@@ -16,5 +16,6 @@ Features of this mod;
 - Teleport to player in social or on selection
 - Enables jumping where jumping is disabled by the mapper
 - Auto-saves/loads options for ESP, Clone mode, AntiPortal, Info+
+- Unlocks desktop users FPS to 144
 
 Enjoy. (C# sucks major ****)
