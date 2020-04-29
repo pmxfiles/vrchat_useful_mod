@@ -15,5 +15,6 @@ Features of this mod;
 - Player pill ESP
 - Teleport to player in social or on selection
 - Enables jumping where jumping is disabled by the mapper
+- Auto-saves/loads options for ESP, Clone mode, AntiPortal, Info+
 
 Enjoy. (C# sucks major ****)
