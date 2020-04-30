@@ -242,7 +242,7 @@ namespace TestMod
                 avi.polys = poly_count;
                 anti_crash_list[user.field_APIUser_0.id] = avi;
 
-                if (poly_count >= 500000)
+                if (poly_count >= max_polygons)
                 {
                     /*destroy all renderers to ensure avatar is dead*/
                     foreach (var obj in user.field_VRCAvatarManager_0.GetComponentsInChildren<Renderer>())
@@ -279,12 +279,12 @@ namespace TestMod
                 }
                 //MelonModLogger.Log("user \"" + user.field_APIUser_0.displayName + "\" has " + particle_count + " particle_count");
                 //MelonModLogger.Log("user \"" + user.field_APIUser_0.displayName + "\" has " + particle_max + " particle_max");
-                if (particle_max >= 50000)
+                if (particle_max >= max_particles)
                 {
                     disable_player();
                     MelonModLogger.Log("[!!!] disabled particles for user \"" + user.field_APIUser_0.displayName.ToString() + "\" with particle_max " + particle_max.ToString());
                 }
-                if (particle_count >= 50000)
+                if (particle_count >= max_particles)
                 {
                     disable_player();
                     MelonModLogger.Log("[!!!] disabled particles for user \"" + user.field_APIUser_0.displayName.ToString() + "\" with particle_count " + particle_count.ToString());
