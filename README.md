@@ -6,7 +6,9 @@ How to install;
 - Download the DLL on the latest release
 - Put the DLL into the "Mods" folder in your VRChat installation
 - Profit
+
 (Optional)
+
 If you get any error about the Assembly... you need to install the unhollowed managed files
 - Download https://cdn.discordapp.com/attachments/518428951794941955/702661413147115540/Managed.7z
 - Put all the DLL files in the "MelonLoader\Managed" folder
