@@ -19,7 +19,7 @@ Features of this mod;
 - Player pill ESP
 - Teleport to player in social or on selection
 - Enables jumping where jumping is disabled by the mapper
-- Auto-saves/loads options for ESP, Clone mode, AntiPortal, Info+
+- Auto-saves/loads options for ESP, Clone mode, AntiPortal, Info+, AntiCrasher, IgnoreFriends
 - Unlocks desktop users FPS to 144
 - Speed-modifier for faster walking/running
 - AntiCrasher (particle and poly count detection with configurable limits)
