@@ -1,6 +1,10 @@
 # vrchat_useful_mod
 This mod is made to be used with MelonLoader. (https://github.com/HerpDerpinstine/MelonLoader)
 
+![Example anticrasher](https://i.imgur.com/CbcbF0K.png)
+![Example in-game menu](https://i.imgur.com/f2PyrvG.png)
+![Example in-game menu button](https://i.imgur.com/NlolOFk.png)
+
 This mod requires all unhollowed files, if you don't have those https://cdn.discordapp.com/attachments/518428951794941955/702661413147115540/Managed.7z
 put the files from this in the melonloader managed folder.
 
@@ -18,5 +22,7 @@ Features of this mod;
 - Auto-saves/loads options for ESP, Clone mode, AntiPortal, Info+
 - Unlocks desktop users FPS to 144
 - Speed-modifier for faster walking/running
+- AntiCrasher (particle and poly count detection with configurable limits)
+- AntiCrasher ignore friends mode  
 
 Enjoy. (C# sucks major ****)
