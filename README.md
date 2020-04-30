@@ -1,12 +1,20 @@
 # vrchat_useful_mod
 This mod is made to be used with MelonLoader. (https://github.com/HerpDerpinstine/MelonLoader)
 
+How to install;
+- Go to the release page; https://github.com/kichiro1337/vrchat_useful_mod/releases
+- Download the DLL on the latest release
+- Put the DLL into the "Mods" folder in your VRChat installation
+- Profit
+(Optional)
+If you get any error about the Assembly... you need to install the unhollowed managed files
+- Download https://cdn.discordapp.com/attachments/518428951794941955/702661413147115540/Managed.7z
+- Put all the DLL files in the "MelonLoader\Managed" folder
+- Profit
+
 ![Example anticrasher](https://i.imgur.com/CbcbF0K.png)
 ![Example in-game menu](https://i.imgur.com/f2PyrvG.png)
 ![Example in-game menu button](https://i.imgur.com/NlolOFk.png)
-
-This mod requires all unhollowed files, if you don't have those https://cdn.discordapp.com/attachments/518428951794941955/702661413147115540/Managed.7z
-put the files from this in the melonloader managed folder.
 
 Features of this mod;
 - Flying / NoClip (Oculus compatible, right thumbstick up/down) (Desktop Q & E)
