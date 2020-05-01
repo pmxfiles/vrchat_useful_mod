@@ -211,7 +211,7 @@ namespace TestMod
                 if (user == null || user.prop_VRCAvatarManager_0 == null || user.field_Private_APIUser_0 == null) continue;
                 if (user.field_Private_APIUser_0.id == VRCPlayer.field_Internal_Static_VRCPlayer_0.field_Private_Player_0.field_Private_APIUser_0.id) continue;
                 if (user.prop_VRCAvatarManager_0.enabled == false) continue;
-                if (anti_crasher_ignore_friends) if (user.field_Private_APIUser_0.isFriend) continue;
+                if (anti_crasher_ignore_friends) if (user.GetAPIUser().isFriend) continue;
                 //check if player is known
                 var poly_count = 0; bool user_was_blocked = false;
                 var contains = anti_crash_list.ContainsKey(user.field_Private_APIUser_0.id);
@@ -309,7 +309,7 @@ namespace TestMod
             if (clone_mode) clone_check();
             if (delete_portals) auto_delete_portals();
             if (isNoclip || fly_mode) height_adjust();
-            if (Time.time > last_routine)
+            if (Time.time > last_routine && Wrappers.GetPlayerManager() != null)
             {
                 last_routine = Time.time + 1;
                 if (anti_crasher) detect_crasher();                
@@ -593,7 +593,6 @@ namespace TestMod
                 var avatar = fav_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0;
                 if (avatar.releaseStatus == "public")
                 {
-                    MelonModLogger.Log("Fav click; " + avatar.releaseStatus.ToString());
                     if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
                     {
                         avatar_utils.add_to_list(avatar);
@@ -690,7 +689,6 @@ namespace TestMod
                     var avatar = found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0;
                     if (avatar.releaseStatus == "public")
                     {
-                        MelonModLogger.Log("Fav click; " + avatar.releaseStatus.ToString());
                         if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
                         {
                             avatar_utils.add_to_list(avatar);
@@ -705,7 +703,7 @@ namespace TestMod
                     }
                     else
                     {
-                        MelonModLogger.Log("Avatar cloning failed, avatar is not public! (" + found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus + ")");
+                        MelonModLogger.Log("Avatar saving failed, avatar is not public! (" + found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus + ")");
                     }
                 }));
 
@@ -893,10 +891,39 @@ namespace TestMod
                 var tp_to_user = ButtonAPI.CreateButton(false, ButtonType.Default, "Teleport", "Tps you to user selected", Color.white, Color.red, 0, 0, Wrappers.GetQuickMenu().transform.Find("UserInteractMenu"),
                 new Action(() =>
                 {
-                    var player = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_Private_Static_PlayerManager_0);
                     var SelectedPlayer = Wrappers.GetQuickMenu().GetSelectedPlayer();
                     VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position = SelectedPlayer.transform.position;                    
 
+                }),
+                new Action(() =>
+                {
+
+                }));
+
+                var direct_favplus = ButtonAPI.CreateButton(false, ButtonType.Default, "Add to Fav+", "Adds the persons avatar to Fav+ silently", Color.white, Color.red, 0, -1, Wrappers.GetQuickMenu().transform.Find("UserInteractMenu"),
+                new Action(() =>
+                {
+                    var found_player = Wrappers.GetQuickMenu().GetSelectedPlayer();
+                    if (found_player == null) return;
+                    var avatar = found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0;
+                    if (avatar.releaseStatus == "public")
+                    {
+                        if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
+                        {
+                            avatar_utils.add_to_list(avatar);
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                        }
+                        else
+                        {
+                            avatar_utils.add_to_list(avatar);
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                        }
+                        MelonModLogger.Log("Done");
+                    }
+                    else
+                    {
+                        MelonModLogger.Log("Avatar saving failed, avatar is not public! (" + found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus + ")");
+                    }
                 }),
                 new Action(() =>
                 {
