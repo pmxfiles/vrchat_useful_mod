@@ -18,11 +18,11 @@ If you get any error about the Assembly... you need to install the unhollowed ma
 - Put all the DLL files in the "MelonLoader\Managed" folder
 - Profit
 
-![Example anticrasher](https://i.imgur.com/CbcbF0K.png)
 ![Example social page](https://i.imgur.com/xcCr993.png)
 ![Example in-game menu](https://i.imgur.com/f2PyrvG.png)
 ![Example fav+](https://i.imgur.com/LmF1v7D.png)
 ![Example in-game menu button](https://i.imgur.com/NlolOFk.png)
+![Example in-game direct menu](https://i.imgur.com/4aEE4gK.png)
 
 Features of this mod;
 - Flying / NoClip (Oculus compatible, right thumbstick up/down) (Desktop Q & E)
@@ -41,6 +41,6 @@ Features of this mod;
 - AntiCrasher (particle and poly count detection with configurable limits)
 - AntiCrasher ignore friends mode  
 - Fav+ which allows infinite avatars to be saved (credits to 404, this is a refactored version of his)
-- Silent avatar saving from social to Fav+
+- Silent avatar saving from social & direct selection - to Fav+
 
 Enjoy. (C# sucks major ****)
