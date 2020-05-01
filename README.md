@@ -2,8 +2,8 @@
 This mod is made to be used with MelonLoader. (https://github.com/HerpDerpinstine/MelonLoader)
 
 !UPDATE!
-Please update your unhollowed files to use the new unhollower 0.3.0, or use the files already unhollowed below!
-Fav+ was added!
+- Please update your unhollowed files to use the new unhollower 0.3.0, or use the files already unhollowed below!
+- Fav+ was added!
 
 How to install;
 - Go to the release page; https://github.com/kichiro1337/vrchat_useful_mod/releases
