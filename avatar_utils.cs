@@ -1,4 +1,4 @@
-﻿using Il2CppSystem.IO;
+using Il2CppSystem.IO;
 using MelonLoader;
 using Newtonsoft.Json;
 using System;
@@ -35,7 +35,9 @@ namespace TestMod
         public static void save()
         {
             if (config == null) return;
+            avatar_list.Reverse();
             File.WriteAllText("hashmod_avatars.json", JsonConvert.SerializeObject(avatar_list, Formatting.Indented));
+            avatar_list.Reverse();
         }
         public static void load()
         {
@@ -45,6 +47,7 @@ namespace TestMod
                 return;
             }
             if (config == null) config = new avatar_config();
+            avatar_list.Clear();
             avatar_list = JsonConvert.DeserializeObject<List<avatar_struct>>(File.ReadAllText("hashmod_avatars.json"));
         }
     }
@@ -53,9 +56,9 @@ namespace TestMod
         public static void update_list(IEnumerable<string> arr, UiAvatarList avilist)
         {
             avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Clear();
-            foreach (var a in arr) if (avilist.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(a) == false) avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(a, null);
+            foreach (var a in arr) if (avilist.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(a) == false) { avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(a, null); }
             avilist.specificListIds = arr.ToArray();
-            avilist.Method_Protected_Virtual_Void_Int32_0(0); //not sure what this actually is for credits to sofar
+            avilist.Method_Protected_Virtual_Void_Int32_0(0); //not sure what this actually is for credits to sofar            
         }
         public static void setup(List<avatar_struct> avatars, UiAvatarList avilist)
         {
@@ -69,7 +72,6 @@ namespace TestMod
                 if (!avilist.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(obj.avatar_ident)) avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(obj.avatar_ident, api_avi);
                 //}));
             }
-            avatars.Reverse();
             avilist.specificListIds = avatars.Select(x => x.avatar_ident).ToArray();
             avilist.Method_Protected_Virtual_Void_Int32_0(0);
         }
@@ -79,12 +81,14 @@ namespace TestMod
             if (api == null) return;
             if (!avatar_config.avatar_list.Any(x => x.avatar_ident == api.id))
             {
+                avatar_config.avatar_list.Reverse();
                 avatar_config.avatar_list.Add(new avatar_struct()
                 {
                     avatar_ident = api.id,
                     avatar_name = api.name,
                     avatar_preview = api.thumbnailImageUrl,
                 });
+                avatar_config.avatar_list.Reverse();
             }
             else avatar_config.avatar_list.RemoveAll(x => x.avatar_ident == api.id);            
             avatar_config.save();
