@@ -69,6 +69,7 @@ namespace TestMod
                 if (!avilist.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(obj.avatar_ident)) avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(obj.avatar_ident, api_avi);
                 //}));
             }
+            avatars.Reverse();
             avilist.specificListIds = avatars.Select(x => x.avatar_ident).ToArray();
             avilist.Method_Protected_Virtual_Void_Int32_0(0);
         }
