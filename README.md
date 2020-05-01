@@ -40,7 +40,7 @@ Features of this mod;
 - Speed-modifier for faster walking/running
 - AntiCrasher (particle and poly count detection with configurable limits)
 - AntiCrasher ignore friends mode  
-- Fav+ which allows infinite avatars to be saved
+- Fav+ which allows infinite avatars to be saved (credits to 404, this is a refactored version of his)
 - Silent avatar saving from social to Fav+
 
 Enjoy. (C# sucks major ****)
