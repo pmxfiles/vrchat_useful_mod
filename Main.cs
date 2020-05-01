@@ -1,194 +1,910 @@
-using Il2CppSystem.IO;
+using Harmony;
 using MelonLoader;
-using Newtonsoft.Json;
+using NET_SDK;
+using NET_SDK.Harmony;
+using NET_SDK.Reflection;
 using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Transmtn;
+using System.Net;
 using UnityEngine;
+using Notorious;
+using Notorious.API;
+using VRCSDK2;
+using VRC;
+using VRTK.Controllables.ArtificialBased;
+using Transmtn.DTO;
+using TestMod;
 using UnityEngine.UI;
 using VRC.Core;
 using VRC.UI;
+using ThirdParty.iOS4Unity;
 
 namespace TestMod
 {
-    public class avatar_struct
+    public static class BuildInfo
     {
-        public string avatar_name;
-        public string avatar_ident;
-        public string avatar_preview;
+        public const string Name = "useful stuff mod"; // Name of the Mod.  (MUST BE SET)
+        public const string Author = "hash"; // Author of the Mod.  (Set as null if none)
+        public const string Company = null; // Company that made the Mod.  (Set as null if none)
+        public const string Version = "1.3.3.7"; // Version of the Mod.  (MUST BE SET)
+        public const string DownloadLink = null; // Download Link for the Mod.  (Set as null if none)
     }
-    public class avatar_config
+
+    public class TestMod : MelonMod
     {
-        public static List<avatar_struct> avatar_list = new List<avatar_struct>
+        public static bool fly_mode = false;
+        public static bool clone_mode = true;
+        public static bool delete_portals = false;
+        public static bool anti_crasher = false;
+        public static bool esp_players = false;
+        public static bool info_plus_toggle = false;
+        public static bool show_blocked_avatar = false;
+        public static bool speed_hacks = false;
+
+        public static int max_particles = 50000;
+        public static int max_polygons = 500000;
+        public static bool anti_crasher_ignore_friends = false;
+
+        public static bool sub_menu_open = false;
+        public static GameObject sub_menu = null;
+
+        public static bool fly_down;
+        public static bool fly_up;
+
+        public static bool setup_button;
+        public static bool setup_userinfo_button;
+        private bool isNoclip = false;
+        private static List<int> noClipToEnable = new List<int>();
+        public LayerMask collisionLayers = -1;
+
+        public static UiAvatarList avatarslist;
+        public override void OnApplicationStart()
         {
-            new avatar_struct()
-            {
-                avatar_ident = "avtr_71bd9db5-a7be-4427-a584-517b6203eb6f",
-                avatar_name = "Loli Kon Quest",
-                avatar_preview = "https://api.vrchat.cloud/api/1/image/file_904fa567-bb25-4cb8-9cd6-0f1ccd0261a8/3/256",
-            }
-        };
-        public static avatar_config config;
-        public static void save()
-        {
-            if (config == null) return;
-            File.WriteAllText("hashmod_avatars.json", JsonConvert.SerializeObject(avatar_list, Formatting.Indented));
+            var ini = new IniFile("hashcfg.ini");
+            avatar_config.load();
+
+            if (ini.KeyExists("toggles", "clone")) clone_mode = bool.Parse(ini.Read("toggles", "clone"));
+            if (ini.KeyExists("toggles", "info_plus")) info_plus_toggle = bool.Parse(ini.Read("toggles", "info_plus"));
+            if (ini.KeyExists("toggles", "esp_player")) esp_players = bool.Parse(ini.Read("toggles", "esp_player"));
+            if (ini.KeyExists("toggles", "antiportal")) delete_portals = bool.Parse(ini.Read("toggles", "antiportal"));
+            if (ini.KeyExists("toggles", "anticrash")) anti_crasher = bool.Parse(ini.Read("toggles", "anticrash"));
+            if (ini.KeyExists("toggles", "anticrash_ignore_friends")) anti_crasher_ignore_friends = bool.Parse(ini.Read("toggles", "anticrash_ignore_friends"));
+            if (ini.KeyExists("anticrash", "max_particles")) max_particles = int.Parse(ini.Read("anticrash", "max_particles"));
+            if (ini.KeyExists("anticrash", "max_polygons")) max_polygons = int.Parse(ini.Read("anticrash", "max_polygons"));
         }
-        public static void load()
+
+        public override void OnLevelWasLoaded(int level)
         {
-            if (File.Exists("hashmod_avatars.json") == false)
-            {
-                config = new avatar_config(); save(); 
-                return;
-            }
-            if (config == null) config = new avatar_config();
-            avatar_list = JsonConvert.DeserializeObject<List<avatar_struct>>(File.ReadAllText("hashmod_avatars.json"));
+            anti_crash_list.Clear();
+            
         }
-    }
-    public class avatar_utils
-    {
-        public static void update_list(IEnumerable<string> arr, UiAvatarList avilist)
+
+        public override void OnLevelWasInitialized(int level)
         {
-            avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Clear();
-            foreach (var a in arr) if (avilist.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(a) == false) avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(a, null);
-            avilist.specificListIds = arr.ToArray();
-            avilist.Method_Protected_Virtual_Void_Int32_0(0); //not sure what this actually is for credits to sofar
+            anti_crash_list.Clear();
         }
-        public static void setup(List<avatar_struct> avatars, UiAvatarList avilist)
+
+
+        public static void auto_delete_portals()
         {
-            avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Clear();
-            for (var c=0;c<avatars.Count();c++)
-            {
-                var obj = avatars[c];
-                var api_avi = new ApiAvatar() { id = obj.avatar_ident, thumbnailImageUrl = obj.avatar_preview, name = obj.avatar_name };
-                //api_avi.Get(new Action<ApiContainer>(x =>
-                //{
-                if (!avilist.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(obj.avatar_ident)) avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(obj.avatar_ident, api_avi);
-                //}));
-            }
-            avilist.specificListIds = avatars.Select(x => x.avatar_ident).ToArray();
-            avilist.Method_Protected_Virtual_Void_Int32_0(0);
+            (from portal in Resources.FindObjectsOfTypeAll<PortalInternal>()
+             where portal.gameObject.activeInHierarchy && !portal.gameObject.GetComponentInParent<VRC_PortalMarker>()
+             select portal).ToList().ForEach(p =>
+             {
+                 UnityEngine.Object.Destroy(p.transform.root.gameObject);
+             });
         }
-        public static void add_to_list(ApiAvatar api)
+
+        public void noclip()
         {
-            if (api.releaseStatus == "private") return;
-            if (api == null) return;
-            if (!avatar_config.avatar_list.Any(x => x.avatar_ident == api.id))
+            if (isNoclip) Physics.gravity = new Vector3(0, 0, 0);
+            else Physics.gravity = new Vector3(0, -9.81f, 0);
+
+            Collider[] array = GameObject.FindObjectsOfType<Collider>();
+            Component component = VRCPlayer.field_Internal_Static_VRCPlayer_0.GetComponents<Collider>().FirstOrDefault<Component>();
+            Collider[] array2 = array;
+            for (int i = 0; i < array2.Length; i++)
             {
-                avatar_config.avatar_list.Add(new avatar_struct()
+                Collider collider = array2[i];
+                bool flag = collider.GetComponent<PlayerSelector>() != null || collider.GetComponent<VRC_Pickup>() != null || collider.GetComponent<QuickMenu>() != null || collider.GetComponent<VRC_Station>() != null || collider.GetComponent<VRC_AvatarPedestal>() != null;
+                if (flag)
                 {
-                    avatar_ident = api.id,
-                    avatar_name = api.name,
-                    avatar_preview = api.thumbnailImageUrl,
-                });
-            }
-            else avatar_config.avatar_list.RemoveAll(x => x.avatar_ident == api.id);            
-            avatar_config.save();
-        }
-        public static void update(List<string> arr, UiAvatarList avilist)
-        {
-            avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Clear();
-            foreach (var a in arr) avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(a, null);
-            avilist.specificListIds = arr.ToArray();
-            avilist.Method_Protected_Virtual_Void_Int32_0(0); //not sure what this actually is for credits to sofar
-        }
-    }
-    public class avatar_ui
-    {
-        public GameObject ui_object;
-        public static UiAvatarList ui_avatar_list = null;
-        public UiAvatarList listing_avatars;
-        public Button listing_button;
-        public Text listing_text;
-        public static UiAvatarList get_avatar_list()
-        {
-            if (ui_avatar_list == null)
-            {
-                var screens_avatar = GameObject.Find("/UserInterface/MenuContent/Screens/Avatar");
-                var vlist = screens_avatar.transform.Find("Vertical Scroll View/Viewport/Content");
-                var favi_list = vlist.transform.Find("Favorite Avatar List").gameObject;
-                favi_list = GameObject.Instantiate(favi_list, favi_list.transform.parent);
-                var txt = favi_list.transform.Find("Button");
-                txt.GetComponentInChildren<Text>().text = "New List";                     
-                var avi_uilist = favi_list.GetComponent<UiAvatarList>();
-                avi_uilist.category = UiAvatarList.EnumNPublicSealedvaInPuMiFaSpClPuLi9vUnique.SpecificList;
-                avi_uilist.StopAllCoroutines();
-                favi_list.SetActive(false);
-                ui_avatar_list = avi_uilist;
-            }
-            return ui_avatar_list;
-        }
-        public static avatar_ui setup(string name, int i)
-        {
-            var ui = new avatar_ui();
-            var avi_list = get_avatar_list();
-            ui.ui_object = GameObject.Instantiate(avi_list.gameObject, avi_list.transform.parent);
-            ui.ui_object.transform.SetSiblingIndex(i);
-            ui.listing_avatars = ui.ui_object.gameObject.GetComponent<UiAvatarList>();
-            ui.listing_button = ui.listing_avatars.GetComponentInChildren<Button>();
-            ui.listing_text = ui.listing_avatars.GetComponentInChildren<Text>();
-            ui.listing_text.text = "Favs v2";
-            ui.listing_avatars.hideWhenEmpty = true; 
-            ui.listing_avatars.clearUnseenListOnCollapse = true;
-            ui.ui_object.SetActive(true);
-            return ui;
-        }
-        public void set_action(Action act)
-        {
-            listing_button.onClick = new Button.ButtonClickedEvent();
-            listing_button.onClick.AddListener(act);
-        }
-    }
-    public class avatar_ui_button
-    {
-        private static GameObject avatar_button = null;
-        public GameObject game_object;
-        public Button ui_avatar_button;
-        public Text ui_avatar_text;
-        
-        public static GameObject get_ui_button()
-        {
-            if (avatar_button == null)
-            {
-                var button = GameObject.Find("/UserInterface/MenuContent/Screens/Avatar/Favorite Button");
-                var new_button = GameObject.Instantiate(button, button.transform.parent);
-                new_button.GetComponent<Button>().onClick.RemoveAllListeners();
-                new_button.SetActive(false);
-                var pos = new_button.transform.localPosition;
-                new_button.transform.localPosition = new Vector3(pos.x, pos.y + 150f);
-                avatar_button = new_button;
-            }
-            return avatar_button;
-        }
-        public static avatar_ui_button setup(string ButtonTitle, float x, float y, bool shownew = false)
-        {
-            var ui_button = new avatar_ui_button();
-            var button = get_ui_button();
-            ui_button.game_object = GameObject.Instantiate(button.gameObject, button.transform.parent);
-            ui_button.ui_avatar_button = ui_button.game_object.GetComponentInChildren<Button>();
-            ui_button.ui_avatar_button.onClick.RemoveAllListeners();
-            var position = ui_button.game_object.transform.localPosition;
-            ui_button.game_object.transform.localPosition = new Vector3(position.x + x, position.y + (80f * y));
-            ui_button.ui_avatar_text = ui_button.game_object.GetComponentInChildren<Text>();
-            ui_button.ui_avatar_text.text = ButtonTitle;
-            if (shownew == false)
-            {
-                var owo = ui_button.game_object.GetComponentsInChildren(Image.Il2CppType);
-                foreach (var obj in owo)
+                    collider.enabled = true;
+                }
+                else
                 {
-                    if (obj.name == "Icon_New") GameObject.DestroyImmediate(obj);
+                    bool flag2 = collider != component && ((isNoclip && collider.enabled || (!isNoclip && noClipToEnable.Contains(collider.GetInstanceID()))));
+                    if (flag2)
+                    {
+                        collider.enabled = !isNoclip;
+                        if (isNoclip)
+                        {
+                            noClipToEnable.Add(collider.GetInstanceID());
+                        }
+                    }
                 }
             }
-            ui_button.game_object.SetActive(true);
-            return ui_button;
+            bool flag3 = !isNoclip;
+            if (flag3)
+            {
+                noClipToEnable.Clear();
+            }
         }
-        public void set_action(Action act)
+
+        private static int get_poly_count(GameObject player)
         {
-            ui_avatar_button.onClick = new Button.ButtonClickedEvent();
-            ui_avatar_button.onClick.AddListener(act);
+            var poly_count = 0;
+            var skinmeshs = player.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            foreach (var obj in skinmeshs)
+            {
+                if (obj != null)
+                {
+                    if (obj.sharedMesh == null) continue;
+                    poly_count += CountMeshPolys(obj.sharedMesh);
+                }
+            }
+            var meshfilters = player.GetComponentsInChildren<MeshFilter>(true);
+            foreach (var obj in meshfilters)
+            {
+                if (obj != null)
+                {
+                    if (obj.sharedMesh == null) continue;
+                    poly_count += CountMeshPolys(obj.sharedMesh);
+                }
+            }
+            return poly_count;
+        }
+        internal static int CountPolygons(Renderer r)
+        {
+            int num = 0;
+            SkinnedMeshRenderer skinnedMeshRenderer = r as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null)
+            {
+                if (skinnedMeshRenderer.sharedMesh == null)
+                {
+                    return 0;
+                }
+                num += CountMeshPolys(skinnedMeshRenderer.sharedMesh);
+            }            
+            return num;
+        }
+        private static int CountMeshPolys(Mesh sourceMesh)
+        {
+            bool flag = false;
+            Mesh mesh;
+            if (sourceMesh.isReadable)
+            {
+                mesh = sourceMesh;
+            }
+            else
+            {
+                mesh = UnityEngine.Object.Instantiate<Mesh>(sourceMesh);
+                flag = true;
+            }
+            int num = 0;
+            for (int i = 0; i < mesh.subMeshCount; i++)
+            {
+                num += mesh.GetTriangles(i).Length / 3;
+            }
+            if (flag)
+            {
+                UnityEngine.Object.Destroy(mesh);
+            }
+            return num;
+        }
+
+        //userid, asseturl, polys
+        static Dictionary<string, avatar_data> anti_crash_list = new Dictionary<string, avatar_data>();
+
+        public static void detect_crasher()
+        {
+            //2420 poly = loading char
+            var users_active = Wrappers.GetPlayerManager().GetAllPlayers();
+            for (var c=0;c<users_active.Count;c++)
+            {                
+                var user = users_active[c];
+                if (user == null || user.prop_VRCAvatarManager_0 == null || user.field_Private_APIUser_0 == null) continue;
+                if (user.field_Private_APIUser_0.id == VRCPlayer.field_Internal_Static_VRCPlayer_0.field_Private_Player_0.field_Private_APIUser_0.id) continue;
+                if (user.prop_VRCAvatarManager_0.enabled == false) continue;
+                if (anti_crasher_ignore_friends) if (user.field_Private_APIUser_0.isFriend) continue;
+                //check if player is known
+                var poly_count = 0; bool user_was_blocked = false;
+                var contains = anti_crash_list.ContainsKey(user.field_Private_APIUser_0.id);
+                if (contains == false)
+                {
+                    poly_count = get_poly_count(user.gameObject);
+                    var container = new avatar_data();
+                    container.asseturl = user.field_Private_VRCAvatarManager_0.field_Private_ApiAvatar_0.assetUrl; container.polys = poly_count;
+                    anti_crash_list.Add(user.field_Private_APIUser_0.id, container);
+                }
+                else
+                {
+                    poly_count = get_poly_count(user.gameObject);
+                    if (anti_crash_list[user.field_Private_APIUser_0.id].polys == poly_count)
+                    {
+                        //still same count skip
+                        continue;
+                    }
+                    if (poly_count <= 2420 || anti_crash_list[user.field_Private_APIUser_0.id].polys == -1)
+                    {
+                        //still loading or blocked
+                        var container = new avatar_data();
+                        container.asseturl = user.field_Private_VRCAvatarManager_0.field_Private_ApiAvatar_0.assetUrl;
+                        if (poly_count <= 2420) container.polys = -1; //check again next iteration
+                        else container.polys = poly_count; //seems we have a result
+                        anti_crash_list[user.field_Private_APIUser_0.id] = container;
+                        if (container.polys == -1) continue; /*skip for this iteration*/
+                    }
+                }
+
+                if (poly_count == 0) poly_count = get_poly_count(user.gameObject);
+
+                /*update poly count and avi asset*/
+                var avi = new avatar_data();
+                avi.asseturl = user.field_Private_VRCAvatarManager_0.field_Private_ApiAvatar_0.assetUrl;
+                avi.polys = poly_count;
+                anti_crash_list[user.field_Private_APIUser_0.id] = avi;
+
+                if (poly_count >= max_polygons || user.prop_VRCAvatarManager_0.prop_ApiAvatar_0.id == "avtr_3bab9417-b18a-46b7-9de8-0e06393ad998") // eternally block this fucking penis troll character omfg
+                {
+                    /*destroy all renderers to ensure avatar is dead*/
+                    foreach (var obj in user.field_Private_VRCAvatarManager_0.GetComponentsInChildren<Renderer>())
+                    {
+                        if (obj == null) continue;                        
+                        obj.enabled = false;
+                        UnityEngine.Object.Destroy(obj);
+                    }
+                    MelonModLogger.Log("[!!!] disabled avatar for user \"" + user.field_Private_APIUser_0.displayName.ToString() + "\" with polys " + poly_count.ToString());
+                    user_was_blocked = true;
+                }
+                var particle_sys = user.GetComponentsInChildren<ParticleSystem>();
+                var particle_count = 0; var particle_max = 0;
+                void disable_player() //lambda i guess is a thing in c#?
+                {
+                    foreach (var sys in particle_sys)
+                    {
+                        if (sys == null) continue;
+                        var particle_renderer = sys.GetComponent<ParticleSystemRenderer>();
+                        if (particle_renderer == null) continue;
+                        if (particle_renderer.enabled == false) continue;
+                        sys.Stop(true);
+                        particle_renderer.enabled = false;
+                        user_was_blocked = true;
+                    }
+                }
+                foreach (var sys in particle_sys)
+                {
+                    if (sys == null) continue;
+                    var particle_renderer = sys.GetComponent<ParticleSystemRenderer>();
+                    if (particle_renderer == null) continue;
+                    if (particle_renderer.enabled == false) continue;
+                    particle_count += sys.particleCount; particle_max += sys.maxParticles;
+                }
+                //MelonModLogger.Log("user \"" + user.field_APIUser_0.displayName + "\" has " + particle_count + " particle_count");
+                //MelonModLogger.Log("user \"" + user.field_APIUser_0.displayName + "\" has " + particle_max + " particle_max");
+                if (particle_max >= max_particles)
+                {
+                    disable_player();
+                    MelonModLogger.Log("[!!!] disabled particles for user \"" + user.field_Private_APIUser_0.displayName.ToString() + "\" with particle_max " + particle_max.ToString());
+                }
+                if (particle_count >= max_particles)
+                {
+                    disable_player();
+                    MelonModLogger.Log("[!!!] disabled particles for user \"" + user.field_Private_APIUser_0.displayName.ToString() + "\" with particle_count " + particle_count.ToString());
+                }
+                if (user_was_blocked) MelonModLogger.Log("[!!!] user \"" + user.field_Private_APIUser_0.displayName.ToString() + "\" was detected as potential crasher");
+            }
+        }
+
+        static float last_routine;
+
+        public override void OnUpdate()
+        {
+            if (sub_menu_open) menu_handler();
+            if (clone_mode) clone_check();
+            if (delete_portals) auto_delete_portals();
+            if (isNoclip || fly_mode) height_adjust();
+            if (Time.time > last_routine)
+            {
+                last_routine = Time.time + 1;
+                if (anti_crasher) detect_crasher();                
+                if (info_plus_toggle) info_plus();
+                if (esp_players) esp_player();                
+            }
+        }
+
+        private static void menu_handler()
+        {
+            var shortcutmenu = Wrappers.GetQuickMenu();
+            if (shortcutmenu != null && shortcutmenu.prop_Boolean_0 == false)
+            {
+                sub_menu_open = false;
+                sub_menu.SetActive(false);
+
+                VRCUiManager.prop_VRCUiManager_0.Method_Public_Boolean_1();
+
+                //handle config
+                var ini = new IniFile("hashcfg.ini");
+
+                ini.Write("toggles", "clone", clone_mode.ToString());
+                ini.Write("toggles", "info_plus", info_plus_toggle.ToString());
+                ini.Write("toggles", "esp_player", esp_players.ToString());
+                ini.Write("toggles", "antiportal", delete_portals.ToString());
+                ini.Write("toggles", "anticrash", anti_crasher.ToString());
+                ini.Write("toggles", "anticrash_ignore_friends", anti_crasher_ignore_friends.ToString());
+                ini.Write("anticrash", "max_particles", max_particles.ToString());
+                ini.Write("anticrash", "max_polygons", max_polygons.ToString());
+            }
+        }
+
+        private static void info_plus()
+        {
+            var screens = GameObject.Find("Screens");
+            if (screens != null)
+            {
+                var userinfo = screens.transform.Find("UserInfo");
+                if (userinfo != null)
+                {
+                    var userInfo = userinfo.transform.GetComponent<VRC.UI.PageUserInfo>();
+                    if (userInfo != null && userInfo.user != null)
+                    {
+                        var plr_Pmgr = Wrappers.GetPlayerManager();
+                        if (plr_Pmgr != null)
+                        {
+                            var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+                            if (found_player != null && found_player.prop_APIUser_0 != null)
+                            {
+                                bool isblocked = found_player.field_Internal_VRCPlayer_0.prop_Boolean_15;
+                                if (found_player.field_Internal_VRCPlayer_0 == null) return;
+                                var user_panel = userinfo.transform.Find("User Panel");
+                                if (user_panel != null)
+                                {
+                                    var name_text = user_panel.GetComponentInChildren<UnityEngine.UI.Text>();
+                                    if (name_text == null) return;
+                                    name_text.supportRichText = true;
+                                    if (!isblocked)
+                                    {
+                                        if (found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus == "public") name_text.text = $"{found_player.field_Private_APIUser_0.displayName.ToString()} | <color=red>Blocked</color> | <color=lime>Public</color>";
+                                        else name_text.text = $"{found_player.field_Private_APIUser_0.displayName.ToString()} | <color=red>Blocked</color> | <color=red>Private</color>";
+                                    }
+                                    else
+                                    {
+                                        if (found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus == "public") name_text.text = $"{found_player.field_Private_APIUser_0.displayName.ToString()} | <color=lime>Public</color>";
+                                        else name_text.text = $"{found_player.field_Private_APIUser_0.displayName.ToString()} | <color=red>Private</color>";
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (Wrappers.GetPlayerManager() != null && VRCPlayer.field_Internal_Static_VRCPlayer_0 != null)
+            {
+                var users = Wrappers.GetPlayerManager().GetAllPlayers();               
+                if (VRCPlayer.field_Internal_Static_VRCPlayer_0 == null || users == null) return;
+
+                for (int i = 0; i < users.Count; i++)
+                {
+                    var user = users[i];
+                    if (user == null || user.field_Private_APIUser_0 == null) continue;
+                    var canvas = user.transform.Find("Canvas - Profile (1)/Text/Text - NameTag");
+                    var canvas_2 = user.transform.Find("Canvas - Profile (1)/Text/Text - NameTag Drop");
+                    if (canvas == null) continue;
+                    if (canvas_2 == null) continue;
+                    var text_object = canvas.GetComponent<UnityEngine.UI.Text>();
+                    var text_object_2 = canvas_2.GetComponent<UnityEngine.UI.Text>();
+                    if (text_object == null || text_object_2 == null || text_object.enabled == false) continue;
+                    if (user.field_Private_APIUser_0 == null || user.prop_VRCAvatarManager_0 == null) continue;
+                    if (user.field_Private_APIUser_0.displayName == null) continue;
+                    if (user.field_Private_APIUser_0.displayName.Length <= 1) continue;
+                    text_object.supportRichText = true;
+                    text_object_2.text = "";
+
+                    if (user.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus == "public") text_object.text = $"<color=lime>{user.field_Private_APIUser_0.displayName.ToString()}</color>";
+                    else text_object.text = $"<color=red>{user.field_Private_APIUser_0.displayName.ToString()}</color>";
+                }
+            }
+        }
+
+        private static void clone_check()
+        {
+            if (Wrappers.GetQuickMenu() != null)
+            {
+                var screensmenu = Wrappers.GetQuickMenu().transform.Find("UserInteractMenu");
+                if (screensmenu != null && Wrappers.GetQuickMenu().field_Private_APIUser_0 != null)
+                {
+                    var userInfo = Wrappers.GetQuickMenu().GetSelectedPlayer();
+                    if (userInfo != null && userInfo.prop_VRCAvatarManager_0 != null)
+                    {
+                        UserInteractMenu userInteractMenu = Wrappers.GetUserInteractMenu();
+                        if (userInteractMenu != null && userInfo.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus == "public")
+                        {
+                            userInteractMenu.cloneAvatarButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Clone\nReady!";
+                            userInteractMenu.cloneAvatarButton.interactable = true;
+                        }
+                        else
+                        {
+                            userInteractMenu.cloneAvatarButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Can't\nClone\nPrivate!";
+                            userInteractMenu.cloneAvatarButton.interactable = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void esp_player()
+        {
+            GameObject[] array = GameObject.FindGameObjectsWithTag("Player");
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i].transform.Find("SelectRegion"))
+                {
+                    array[i].transform.Find("SelectRegion").GetComponent<Renderer>().sharedMaterial.SetColor("_Color", Color.red);
+                    Wrappers.EnableOutline(HighlightsFX.prop_HighlightsFX_0, array[i].transform.Find("SelectRegion").GetComponent<Renderer>(), true);
+                }
+            }
+        }
+
+        private static void height_adjust()
+        {
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                fly_up = false;
+                fly_down = !fly_down;
+            }
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                fly_down = false;
+                fly_up = !fly_up;
+            }
+
+            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") < 0f) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
+            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") > 0f) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
+
+            if (fly_down) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
+            if (fly_up) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
+        }
+
+        public override void OnFixedUpdate()
+        {
+
+        }
+
+        public override void OnLateUpdate()
+        {
+
+        }
+
+
+        public override void OnGUI()
+        {
+
+        }
+
+        public override void OnApplicationQuit()
+        {
+
+        }
+
+        public override void OnModSettingsApplied()
+        {
+
+        }
+        public static GameObject make_blank_page(string name)
+        {
+            var menutocopy = Wrappers.GetQuickMenu().transform.Find("ShortcutMenu");
+            var tfmMenu = UnityEngine.Object.Instantiate<GameObject>(menutocopy.gameObject).transform;
+            tfmMenu.transform.name = name;
+            for (var i = 0; i < tfmMenu.childCount; i++) GameObject.Destroy(tfmMenu.GetChild(i).gameObject);
+            tfmMenu.SetParent(Wrappers.GetQuickMenu().transform, false);
+            tfmMenu.gameObject.SetActive(false);
+            return tfmMenu.gameObject;
+        }
+
+        public static void do_tp_to_social()
+        {
+            var menu = GameObject.Find("Screens").transform.Find("UserInfo");
+            var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
+            var plr_Pmgr = PlayerManager.Method_Public_Static_PlayerManager_0();
+            var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+            if (found_player == null)
+            {
+                MelonModLogger.Log("player could not be found");
+                return;
+            }
+            var self = Wrappers.GetPlayerManager().GetCurrentPlayer(); 
+            if (self == null)
+            {
+                MelonModLogger.Log("local could not be found");
+                return;
+            }
+            VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position = found_player.transform.position;
+            MelonModLogger.Log("TP completed");
+        }
+
+        public static void do_clone_to_social()
+        {
+            var menu = GameObject.Find("Screens").transform.Find("UserInfo");
+            var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
+            var plr_Pmgr = PlayerManager.Method_Public_Static_PlayerManager_0();
+            var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+            if (found_player == null)
+            {
+                MelonModLogger.Log("player could not be found");
+                return;
+            }
+
+            if (found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus != "public")
+            {
+                MelonModLogger.Log("Avatar cloning failed, avatar is not public! (" + found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus + ")");
+                return;
+            }
+
+            MelonModLogger.Log("Attempting clone for user " + userInfo.user.displayName.ToString());
+
+            var avatar_menu = GameObject.Find("Screens").transform.Find("Avatar").GetComponent<VRC.UI.PageAvatar>();
+            avatar_menu.avatar.field_Internal_ApiAvatar_0 = found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0;
+            avatar_menu.ChangeToSelectedAvatar();
+
+            MelonModLogger.Log("Done!");
+        }
+
+        public static avatar_ui_button fav_btn;
+        public static avatar_ui fav_list = new avatar_ui();
+
+        public static void setup_fav_plus()
+        {
+            fav_list = avatar_ui.setup("Favs+ (" + avatar_config.avatar_list.Count + ")" , 1);
+            avatar_utils.setup(avatar_config.avatar_list, fav_list.listing_avatars);
+            for (var c =0;c<avatar_config.avatar_list.Count();c++)
+            {
+                var x = avatar_config.avatar_list[c];
+                var avatar = new ApiAvatar() { id = x.avatar_ident, name = x.avatar_name, thumbnailImageUrl = x.avatar_preview };
+                if (!fav_list.listing_avatars.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(x.avatar_ident)) fav_list.listing_avatars.field_Private_Dictionary_2_String_ApiAvatar_0.Add(x.avatar_ident, avatar);
+            }
+
+            fav_list.listing_avatars.specificListIds = avatar_config.avatar_list.Select(x => x.avatar_ident).ToArray();
+            Il2CppSystem.Delegate test = (Il2CppSystem.Action<string, GameObject, VRCSDK2.Validation.Performance.Stats.AvatarPerformanceStats>)new Action<string, GameObject, VRCSDK2.Validation.Performance.Stats.AvatarPerformanceStats>((x, y, z) =>
+            {
+                if (avatar_config.avatar_list.Any(v => v.avatar_ident == fav_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0.id))
+                {
+                    fav_btn.ui_avatar_text.text = "Remove from Fav+";
+                    fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
+                }
+                else
+                {
+                    fav_btn.ui_avatar_text.text = "Add to Fav+";
+                    fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
+                }
+
+            });
+
+            fav_list.listing_avatars.avatarPedestal.field_Internal_Action_3_String_GameObject_AvatarPerformanceStats_0 = Il2CppSystem.Delegate.Combine(fav_list.listing_avatars.avatarPedestal.field_Internal_Action_3_String_GameObject_AvatarPerformanceStats_0, test).Cast<Il2CppSystem.Action<string, GameObject, VRCSDK2.Validation.Performance.Stats.AvatarPerformanceStats>>();
+            fav_btn = avatar_ui_button.setup("Add to Fav+", 0f, 9.6f);;
+
+            fav_btn.set_action(() =>
+            {
+                var avatar = fav_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0;
+                if (avatar.releaseStatus == "public")
+                {
+                    MelonModLogger.Log("Fav click; " + avatar.releaseStatus.ToString());
+                    if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
+                    {
+                        avatar_utils.add_to_list(avatar);
+                        avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                        fav_btn.ui_avatar_text.text = "Remove from Fav+";
+                        fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
+                    }
+                    else
+                    {
+                        avatar_utils.add_to_list(avatar);
+                        avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                        fav_btn.ui_avatar_text.text = "Add to Fav+";
+                        fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
+                    }
+                }
+            });
+        }
+
+        public override void VRChat_OnUiManagerInit()
+        {
+            var shortcutmenu = Notorious.Wrappers.GetQuickMenu().transform.Find("ShortcutMenu");
+
+            var screensmenu = GameObject.Find("Screens").transform.Find("UserInfo");
+            if (!setup_userinfo_button && screensmenu != null)
+            {
+                setup_userinfo_button = true;
+
+                setup_fav_plus();
+
+                screensmenu = GameObject.Find("Screens").transform.Find("UserInfo");
+                var back_button = screensmenu.transform.Find("BackButton");
+
+                var clone_button = UnityEngine.Object.Instantiate<GameObject>(back_button.gameObject);
+                var clone_button_getasset = UnityEngine.Object.Instantiate<GameObject>(back_button.gameObject);
+                var clone_button_clonepub = UnityEngine.Object.Instantiate<GameObject>(back_button.gameObject);
+                var clone_button_clone_favplus = UnityEngine.Object.Instantiate<GameObject>(back_button.gameObject);
+                var clone_button_clone = UnityEngine.Object.Instantiate<GameObject>(Wrappers.GetUserInteractMenu().cloneAvatarButton.gameObject);
+
+                clone_button.gameObject.name = "Teleport";
+                clone_button.transform.localPosition -= new Vector3(250, 0, 0);
+                clone_button.GetComponentInChildren<UnityEngine.UI.Text>().text = $"Teleport";
+                clone_button.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
+                clone_button.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() =>
+                {
+                    do_tp_to_social();
+                }));
+
+                //
+
+                clone_button_getasset.gameObject.name = $"Log asset";
+                clone_button_getasset.transform.localPosition -= new Vector3(500, 0, 0);
+                clone_button_getasset.GetComponentInChildren<UnityEngine.UI.Text>().text = $"Log asset";
+                clone_button_getasset.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
+                clone_button_getasset.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() =>
+                {
+                    var menu = GameObject.Find("Screens").transform.Find("UserInfo");
+                    var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
+                    var plr_Pmgr = PlayerManager.Method_Public_Static_PlayerManager_0();
+                    var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+                    if (found_player == null)
+                    {
+                        MelonModLogger.Log("player could not be found id " + userInfo.user.id);
+                        return;
+                    }
+
+                    MelonModLogger.Log("Asset for user " + userInfo.user.displayName + " -> " + found_player.field_Private_VRCAvatarManager_0.field_Private_ApiAvatar_0.assetUrl);
+                }));
+
+                clone_button_clonepub.gameObject.name = $"Clone 2";
+                clone_button_clonepub.transform.localPosition -= new Vector3(750, 0, 0);
+                clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Text>().text = $"Clone";
+                clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
+                clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() =>
+                {
+                    do_clone_to_social();
+                }));
+
+                clone_button_clone_favplus.gameObject.name = $"Clone F+";
+                clone_button_clone_favplus.transform.localPosition -= new Vector3(1000, 0, 0);
+                clone_button_clone_favplus.GetComponentInChildren<UnityEngine.UI.Text>().text = $"Add Fav+";
+                clone_button_clone_favplus.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
+                clone_button_clone_favplus.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() =>
+                {
+                    var menu = GameObject.Find("Screens").transform.Find("UserInfo");
+                    var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
+                    var plr_Pmgr = PlayerManager.Method_Public_Static_PlayerManager_0();
+                    var found_player = plr_Pmgr.GetPlayer(userInfo.user.id);
+                    if (found_player == null)
+                    {
+                        MelonModLogger.Log("player could not be found");
+                        return;
+                    }
+                    MelonModLogger.Log("Attempting to save avatar to Fav+ (" + found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0 + ")");
+                    var avatar = found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0;
+                    if (avatar.releaseStatus == "public")
+                    {
+                        MelonModLogger.Log("Fav click; " + avatar.releaseStatus.ToString());
+                        if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
+                        {
+                            avatar_utils.add_to_list(avatar);
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);                            
+                        }
+                        else
+                        {
+                            avatar_utils.add_to_list(avatar);
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);                            
+                        }
+                        MelonModLogger.Log("Done");
+                    }
+                    else
+                    {
+                        MelonModLogger.Log("Avatar cloning failed, avatar is not public! (" + found_player.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0.releaseStatus + ")");
+                    }
+                }));
+
+                clone_button.transform.SetParent(screensmenu, false);
+                clone_button_getasset.transform.SetParent(screensmenu, false);
+                clone_button_clonepub.transform.SetParent(screensmenu, false);
+                clone_button_clone_favplus.transform.SetParent(screensmenu, false);
+            }
+
+            if (shortcutmenu != null && setup_button == false)
+            {
+                setup_button = true;
+
+                sub_menu = make_blank_page("sub_menu");
+
+                var menubutton = ButtonAPI.CreateButton(false, ButtonType.Default, "Open menu", "Testmenu", Color.white, Color.red, -4, 3, shortcutmenu,
+                new Action(() =>
+                {
+                    sub_menu_open = true;
+                    sub_menu.SetActive(true);
+                    shortcutmenu.gameObject.SetActive(false);
+                }),
+                new Action(() =>
+                {
+                    sub_menu_open = true;
+                    sub_menu.SetActive(true);
+                    shortcutmenu.gameObject.SetActive(false);
+                }));
+
+                var button = ButtonAPI.CreateButton(false, ButtonType.Toggle, "Fly", "Flying mode pseudo bleh", Color.white, Color.red, -3, 1, sub_menu.transform,
+                new Action(() =>
+                {
+                    Physics.gravity = new Vector3(0, 0, 0);
+                }),
+                new Action(() =>
+                {
+                    Physics.gravity = new Vector3(0, -9.81f, 0);
+                }));
+
+                var no_collision = ButtonAPI.CreateButton(false, ButtonType.Toggle, "NoClip", "Disables collisions", Color.white, Color.red, -2, 1, sub_menu.transform,
+                new Action(() =>
+                {
+                    isNoclip = true;
+                    noclip();
+                }),
+                new Action(() =>
+                {
+                    isNoclip = false;
+                    noclip();
+                }));
+
+                var jump_btn = ButtonAPI.CreateButton(false, ButtonType.Default, "YesJump", "Enables jumping", Color.white, Color.red, -3, 1, sub_menu.transform,
+                new Action(() =>
+                {
+                    if (VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.GetComponent<PlayerModComponentJump>() == null) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.AddComponent<PlayerModComponentJump>();
+                }),
+                new Action(() =>
+                {
+
+                }));
+
+                var force_button_clone = ButtonAPI.CreateButton(clone_mode, ButtonType.Toggle, "ForceClone", "Enables the clone button always", Color.white, Color.red, -1, 1, sub_menu.transform,
+                new Action(() =>
+                {
+                    clone_mode = true;
+                }),
+                new Action(() =>
+                {
+                    clone_mode = false;
+                }));
+
+                var esp_button = ButtonAPI.CreateButton(esp_players, ButtonType.Toggle, "ESP", "Enables ESP for players", Color.white, Color.red, 0, 1, sub_menu.transform,
+                new Action(() =>
+                {
+                    esp_players = true;
+                }),
+                new Action(() =>
+                {
+                    esp_players = false;
+
+                    GameObject[] array = GameObject.FindGameObjectsWithTag("Player");
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        if (array[i].transform.Find("SelectRegion"))
+                        {
+                            array[i].transform.Find("SelectRegion").GetComponent<Renderer>().material.SetColor("_Color", Color.red);
+                            array[i].transform.Find("SelectRegion").GetComponent<Renderer>().sharedMaterial.SetColor("_Color", Color.red);
+                            array[i].transform.Find("SelectRegion").GetComponent<Renderer>().enabled = false;
+                            array[i].transform.Find("SelectRegion").gameObject.SetActive(false);
+                            Wrappers.EnableOutline(HighlightsFX.prop_HighlightsFX_0, array[i].transform.Find("SelectRegion").GetComponent<Renderer>(), false);
+                        }
+                    }
+                    foreach (VRC_Pickup pickup in Resources.FindObjectsOfTypeAll<VRC_Pickup>())
+                    {
+                        if (pickup.gameObject.transform.Find("SelectRegion"))
+                        {
+                            pickup.gameObject.transform.Find("SelectRegion").GetComponent<Renderer>().sharedMaterial.SetColor("_Color", Color.red);
+                            Wrappers.EnableOutline(HighlightsFX.prop_HighlightsFX_0, pickup.gameObject.transform.Find("SelectRegion").GetComponent<Renderer>(), false);
+                        }
+                    }
+                }));
+
+                var portalbtn = ButtonAPI.CreateButton(delete_portals, ButtonType.Toggle, "AntiPortal", "Auto deletes portals spawned", Color.white, Color.red, -3, 0, sub_menu.transform,
+                new Action(() =>
+                {
+                    delete_portals = true;
+                }),
+                new Action(() =>
+                {
+                    delete_portals = false;
+                }));
+
+                var blockinfobutton = ButtonAPI.CreateButton(info_plus_toggle, ButtonType.Toggle, "Info+", "Shows in social next to the user name\nif you were blocked by them", Color.white, Color.red, -2, 0, sub_menu.transform,
+                new Action(() =>
+                {
+                    info_plus_toggle = true;
+                }),
+                new Action(() =>
+                {
+                    info_plus_toggle = false;
+
+                    var users = Wrappers.GetPlayerManager().GetAllPlayers();
+                    var self = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_Private_Static_PlayerManager_0);
+                    if (self == null || users == null) return;
+
+                    for (int i = 0; i < users.Count; i++)
+                    {
+                        var user = users[i];
+                        if (user == null || user.field_Private_APIUser_0 == null) continue;
+                        var canvas = user.transform.Find("Canvas - Profile (1)/Text/Text - NameTag");
+                        var canvas_2 = user.transform.Find("Canvas - Profile (1)/Text/Text - NameTag Drop");
+                        if (canvas == null) continue;
+                        if (canvas_2 == null) continue;
+                        var text_object = canvas.GetComponent<UnityEngine.UI.Text>();
+                        var text_object_2 = canvas_2.GetComponent<UnityEngine.UI.Text>();
+                        if (text_object == null || text_object_2 == null || text_object.enabled == false) continue;
+                        text_object.supportRichText = true;
+                        text_object_2.text = $"{user.field_Private_APIUser_0.displayName}";
+                        text_object.text = $"{user.field_Private_APIUser_0.displayName}";
+                    }
+                }));
+
+                var speedhack = ButtonAPI.CreateButton(false, ButtonType.Toggle, "Speedhack", "Sets your player speeds a bit higher than usual", Color.white, Color.red, -1, 0, sub_menu.transform,
+                new Action(() =>
+                {
+                    var locomotion = VRCPlayer.field_Internal_Static_VRCPlayer_0.GetComponent<LocomotionInputController>();
+                    if (locomotion != null)
+                    {
+                        /*speeds*/                        
+                        locomotion.runSpeed = 10f;
+                        locomotion.walkSpeed = 8f;
+                    }
+                }),
+                new Action(() =>
+                {
+                    var locomotion = VRCPlayer.field_Internal_Static_VRCPlayer_0.GetComponent<LocomotionInputController>();
+                    if (locomotion != null)
+                    {
+                        /*speeds*/
+                        locomotion.runSpeed = 4f;
+                        locomotion.walkSpeed = 2f;
+                    }
+                }));
+
+                var anticrasher = ButtonAPI.CreateButton(anti_crasher, ButtonType.Toggle, "AntiCrash", "Tries to detect possibly harmful models\nand effects, removes them automatically\nThe config of max polys/particles can be found in the config file!", Color.white, Color.red, 0, 0, sub_menu.transform,
+                new Action(() =>
+                {
+                    anti_crasher = true;
+                }),
+                new Action(() =>
+                {
+                    anti_crasher = false;
+                }));
+
+                var anticrasher_friend = ButtonAPI.CreateButton(anti_crasher_ignore_friends, ButtonType.Toggle, "IgnoreFriends", "Will make the AntiCrasher ignore your friends!", Color.white, Color.red, -2, -1, sub_menu.transform,
+                new Action(() =>
+                {
+                    anti_crasher_ignore_friends = true;
+                }),
+                new Action(() =>
+                {
+                    anti_crasher_ignore_friends = false;
+                }));
+
+                var tp_to_user = ButtonAPI.CreateButton(false, ButtonType.Default, "Teleport", "Tps you to user selected", Color.white, Color.red, 0, 0, Wrappers.GetQuickMenu().transform.Find("UserInteractMenu"),
+                new Action(() =>
+                {
+                    var player = PlayerWrappers.GetCurrentPlayer(PlayerManager.field_Private_Static_PlayerManager_0);
+                    var SelectedPlayer = Wrappers.GetQuickMenu().GetSelectedPlayer();
+                    VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position = SelectedPlayer.transform.position;                    
+
+                }),
+                new Action(() =>
+                {
+
+                }));
+
+                Application.targetFrameRate = 144;
+            }
         }
     }
 }
