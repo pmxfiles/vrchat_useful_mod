@@ -66,7 +66,7 @@ namespace TestMod
         public override void OnApplicationStart()
         {
             var ini = new IniFile("hashcfg.ini");
-            avatar_config.load();
+            avatar_config.load(); avatar_config.avatar_list.Reverse();
 
             if (ini.KeyExists("toggles", "clone")) clone_mode = bool.Parse(ini.Read("toggles", "clone"));
             if (ini.KeyExists("toggles", "info_plus")) info_plus_toggle = bool.Parse(ini.Read("toggles", "info_plus"));
@@ -593,17 +593,16 @@ namespace TestMod
                 var avatar = fav_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0;
                 if (avatar.releaseStatus == "public")
                 {
-                    if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
-                    {
+                    if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))                    {
                         avatar_utils.add_to_list(avatar);
-                        avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                        avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident), fav_list.listing_avatars);
                         fav_btn.ui_avatar_text.text = "Remove from Fav+";
                         fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
                     }
                     else
                     {
                         avatar_utils.add_to_list(avatar);
-                        avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                        avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident), fav_list.listing_avatars);
                         fav_btn.ui_avatar_text.text = "Add to Fav+";
                         fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
                     }
