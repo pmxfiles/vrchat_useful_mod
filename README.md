@@ -40,5 +40,6 @@ Features of this mod;
 - AntiCrasher (particle and poly count detection with configurable limits)
 - AntiCrasher ignore friends mode  
 - Fav+ which allows infinite avatars to be saved
+- Silent avatar saving from social to Fav+
 
 Enjoy. (C# sucks major ****)
