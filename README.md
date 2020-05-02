@@ -14,8 +14,9 @@ How to install;
 (Optional)
 
 If you get any error about the Assembly... you need to install the unhollowed managed files
-- Download https://cdn.discordapp.com/attachments/518428951794941955/705571162452656168/res.7z
-- Put all the DLL files in the "MelonLoader\Managed" folder
+- Download https://drive.google.com/open?id=1647E5lIWw19IHe7YEdI496mR4HlJysB8
+- Delete everything in the "MelonLoader\Managed" folder
+- Extract the 7z in the "MelonLoader\Managed" folder
 - Profit
 
 ![Example social page](https://i.imgur.com/xcCr993.png)
