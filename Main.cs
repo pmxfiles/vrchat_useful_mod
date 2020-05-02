@@ -23,6 +23,8 @@ using UnityEngine.UI;
 using VRC.Core;
 using VRC.UI;
 using ThirdParty.iOS4Unity;
+using BestHTTP;
+using VRC.Core.BestHTTP;
 
 namespace TestMod
 {
@@ -300,9 +302,7 @@ namespace TestMod
                 if (user_was_blocked) MelonModLogger.Log("[!!!] user \"" + user.field_Private_APIUser_0.displayName.ToString() + "\" was detected as potential crasher");
             }
         }
-
         static float last_routine;
-
         public override void OnUpdate()
         {
             if (sub_menu_open) menu_handler();
@@ -691,12 +691,12 @@ namespace TestMod
                         if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
                         {
                             avatar_utils.add_to_list(avatar);
-                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);                            
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident), fav_list.listing_avatars);
                         }
                         else
                         {
                             avatar_utils.add_to_list(avatar);
-                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);                            
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident), fav_list.listing_avatars);
                         }
                         MelonModLogger.Log("Done");
                     }
@@ -910,12 +910,12 @@ namespace TestMod
                         if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))
                         {
                             avatar_utils.add_to_list(avatar);
-                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident), fav_list.listing_avatars);
                         }
                         else
                         {
                             avatar_utils.add_to_list(avatar);
-                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident).Reverse(), fav_list.listing_avatars);
+                            avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident), fav_list.listing_avatars);
                         }
                         MelonModLogger.Log("Done");
                     }
