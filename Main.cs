@@ -48,6 +48,7 @@ namespace TestMod
         public static bool show_blocked_avatar = false;
         public static bool speed_hacks = false;
 
+        public static int flying_speed = 4;
         public static int max_particles = 50000;
         public static int max_polygons = 500000;
         public static bool anti_crasher_ignore_friends = false;
@@ -78,6 +79,7 @@ namespace TestMod
             if (ini.KeyExists("toggles", "anticrash_ignore_friends")) anti_crasher_ignore_friends = bool.Parse(ini.Read("toggles", "anticrash_ignore_friends"));
             if (ini.KeyExists("anticrash", "max_particles")) max_particles = int.Parse(ini.Read("anticrash", "max_particles"));
             if (ini.KeyExists("anticrash", "max_polygons")) max_polygons = int.Parse(ini.Read("anticrash", "max_polygons"));
+            if (ini.KeyExists("fly", "flying_speed")) flying_speed = int.Parse(ini.Read("fly", "flying_speed"));
         }
 
         public override void OnLevelWasLoaded(int level)
@@ -206,11 +208,15 @@ namespace TestMod
         public static void detect_crasher()
         {
             //2420 poly = loading char
+            if (PlayerManager.Method_Public_Static_PlayerManager_0() == null) return;
             var users_active = Wrappers.GetPlayerManager().GetAllPlayers();
             for (var c=0;c<users_active.Count;c++)
             {                
                 var user = users_active[c];
                 if (user == null || user.prop_VRCAvatarManager_0 == null || user.field_Private_APIUser_0 == null) continue;
+                if (user.field_Private_VRCAvatarManager_0 == null) continue;
+                if (user.field_Private_VRCAvatarManager_0.field_Private_ApiAvatar_0 == null) continue;
+                if (VRCPlayer.field_Internal_Static_VRCPlayer_0 == null) continue;
                 if (user.field_Private_APIUser_0.id == VRCPlayer.field_Internal_Static_VRCPlayer_0.field_Private_Player_0.field_Private_APIUser_0.id) continue;
                 if (user.prop_VRCAvatarManager_0.enabled == false) continue;
                 if (anti_crasher_ignore_friends) if (user.GetAPIUser().isFriend) continue;
@@ -305,16 +311,23 @@ namespace TestMod
         static float last_routine;
         public override void OnUpdate()
         {
-            if (sub_menu_open) menu_handler();
-            if (clone_mode) clone_check();
-            if (delete_portals) auto_delete_portals();
-            if (isNoclip || fly_mode) height_adjust();
-            if (Time.time > last_routine && Wrappers.GetPlayerManager() != null)
+            try
             {
-                last_routine = Time.time + 1;
-                if (anti_crasher) detect_crasher();                
-                if (info_plus_toggle) info_plus();
-                if (esp_players) esp_player();                
+                if (sub_menu_open) menu_handler();
+                if (clone_mode) clone_check();
+                if (delete_portals) auto_delete_portals();
+                if (isNoclip || fly_mode) height_adjust();
+                if (Time.time > last_routine && Wrappers.GetPlayerManager() != null)
+                {
+                    last_routine = Time.time + 1;
+                    if (anti_crasher) detect_crasher();
+                    if (info_plus_toggle) info_plus();
+                    if (esp_players) esp_player();
+                }
+            }
+            catch (Exception e)
+            {
+                MelonModLogger.Log("Error in the main routine! " + e.Message + " in " + e.Source);
             }
         }
 
@@ -339,6 +352,7 @@ namespace TestMod
                 ini.Write("toggles", "anticrash_ignore_friends", anti_crasher_ignore_friends.ToString());
                 ini.Write("anticrash", "max_particles", max_particles.ToString());
                 ini.Write("anticrash", "max_polygons", max_polygons.ToString());
+                ini.Write("fly", "flying_speed", flying_speed.ToString());
             }
         }
 
@@ -395,14 +409,15 @@ namespace TestMod
                     if (user == null || user.field_Private_APIUser_0 == null) continue;
                     var canvas = user.transform.Find("Canvas - Profile (1)/Text/Text - NameTag");
                     var canvas_2 = user.transform.Find("Canvas - Profile (1)/Text/Text - NameTag Drop");
-                    if (canvas == null) continue;
-                    if (canvas_2 == null) continue;
+                    if (canvas == null) continue; if (canvas_2 == null) continue;
                     var text_object = canvas.GetComponent<UnityEngine.UI.Text>();
                     var text_object_2 = canvas_2.GetComponent<UnityEngine.UI.Text>();
                     if (text_object == null || text_object_2 == null || text_object.enabled == false) continue;
+                    if (text_object.text == null || text_object_2.text == null) continue;
                     if (user.field_Private_APIUser_0 == null || user.prop_VRCAvatarManager_0 == null) continue;
                     if (user.field_Private_APIUser_0.displayName == null) continue;
                     if (user.field_Private_APIUser_0.displayName.Length <= 1) continue;
+                    if (user.prop_VRCAvatarManager_0.field_Private_ApiAvatar_0 == null) continue;
                     text_object.supportRichText = true;
                     text_object_2.text = "";
 
@@ -464,11 +479,17 @@ namespace TestMod
                 fly_up = !fly_up;
             }
 
-            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") < 0f) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
-            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") > 0f) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
+            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") < 0f) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position - new Vector3(0f, flying_speed * Time.deltaTime, 0f);
+            if (Input.GetAxis("Oculus_CrossPlatform_SecondaryThumbstickVertical") > 0f) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position + new Vector3(0f, flying_speed * Time.deltaTime, 0f);
 
-            if (fly_down) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position - new Vector3(0f, 2 * Time.deltaTime, 0f);
-            if (fly_up) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position + new Vector3(0f, 2 * Time.deltaTime, 0f);
+            if (fly_down) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position - new Vector3(0f, flying_speed * Time.deltaTime, 0f);
+            if (fly_up) VRCPlayer.field_Internal_Static_VRCPlayer_0.gameObject.transform.position = VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position + new Vector3(0f, flying_speed * Time.deltaTime, 0f);
+        
+            //better directional movement
+            if (Input.GetKey(KeyCode.W)) VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position += VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.forward * flying_speed * Time.deltaTime;
+            if (Input.GetKey(KeyCode.A)) VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position += VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.right * -1f * flying_speed * Time.deltaTime;
+            if (Input.GetKey(KeyCode.S)) VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position += VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.forward * -1f * flying_speed * Time.deltaTime;
+            if (Input.GetKey(KeyCode.D)) VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position += VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.right * flying_speed * Time.deltaTime;
         }
 
         public override void OnFixedUpdate()
@@ -735,10 +756,12 @@ namespace TestMod
                 var button = ButtonAPI.CreateButton(false, ButtonType.Toggle, "Fly", "Flying mode pseudo bleh", Color.white, Color.red, -3, 1, sub_menu.transform,
                 new Action(() =>
                 {
+                    fly_mode = true;
                     Physics.gravity = new Vector3(0, 0, 0);
                 }),
                 new Action(() =>
                 {
+                    fly_mode = false;
                     Physics.gravity = new Vector3(0, -9.81f, 0);
                 }));
 
