@@ -1,6 +1,9 @@
 # vrchat_useful_mod
 This mod is made to be used with MelonLoader. (https://github.com/HerpDerpinstine/MelonLoader)
 
+If you are having issues please use the "Issues" function on github to create a new issue, same for recommendations.
+For anything else feel free to dm me on discord hash#0404
+
 !UPDATE!
 - Please update your unhollowed files to use the new unhollower 0.3.0, or use the files already unhollowed below!
 - Fav+ was added!
