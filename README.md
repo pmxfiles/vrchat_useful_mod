@@ -25,7 +25,7 @@ If you get any error about the Assembly... you need to install the unhollowed ma
 
 ![Example social page](https://i.imgur.com/xcCr993.png)
 ![Example in-game menu](https://i.imgur.com/f2PyrvG.png)
-![Example fav+](https://i.imgur.com/LmF1v7D.png)
+![Example fav+](https://i.imgur.com/xWE8nmj.jpg)
 ![Example in-game menu button](https://i.imgur.com/NlolOFk.png)
 ![Example in-game direct menu](https://i.imgur.com/4aEE4gK.png)
 
