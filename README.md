@@ -8,6 +8,7 @@ For anything else feel free to dm me on discord hash#0404
 !UPDATE!
 - Please update your unhollowed files to use the new unhollower 0.3.0, or use the files already unhollowed below!
 - Fav+ was added!
+- Added show public avatars for a creator in-game
 
 How to install;
 - Go to the release page; https://github.com/kichiro1337/vrchat_useful_mod/releases
@@ -47,6 +48,7 @@ Features of this mod;
 - AntiCrasher ignore friends mode  
 - Fav+ which allows infinite avatars to be saved (credits to 404, this is a refactored version of his)
 - Silent avatar saving from social & direct selection - to Fav+
+- Ability to show a creators public avatars in-game and apply/fav them directly!
 
 Enjoy. (C# sucks major ****)
 
