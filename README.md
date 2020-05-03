@@ -49,3 +49,7 @@ Features of this mod;
 - Silent avatar saving from social & direct selection - to Fav+
 
 Enjoy. (C# sucks major ****)
+
+Disclaimer:
+This is not a official modification for VRChat and is not approved by any means.
+Using this is on your own risk, as any modifications to the client can lead to bans.
