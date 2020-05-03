@@ -15,6 +15,7 @@ using UnityEngine;
 using Notorious;
 using Notorious.API;
 using VRCSDK2;
+using System.Net.Http;
 using VRC;
 using VRTK.Controllables.ArtificialBased;
 using Transmtn.DTO;
@@ -25,6 +26,15 @@ using VRC.UI;
 using ThirdParty.iOS4Unity;
 using BestHTTP;
 using VRC.Core.BestHTTP;
+using Il2CppSystem.Threading.Tasks;
+using Transmtn;
+using System.Threading.Tasks;
+using Il2CppSystem.Threading;
+using UnityEngine.Networking;
+using Newtonsoft.Json;
+using Il2CppMono.Security;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace TestMod
 {
@@ -39,6 +49,8 @@ namespace TestMod
 
     public class TestMod : MelonMod
     {
+        public static string mod_version = "15";
+
         public static bool fly_mode = false;
         public static bool clone_mode = true;
         public static bool delete_portals = false;
@@ -80,6 +92,8 @@ namespace TestMod
             if (ini.KeyExists("anticrash", "max_particles")) max_particles = int.Parse(ini.Read("anticrash", "max_particles"));
             if (ini.KeyExists("anticrash", "max_polygons")) max_polygons = int.Parse(ini.Read("anticrash", "max_polygons"));
             if (ini.KeyExists("fly", "flying_speed")) flying_speed = int.Parse(ini.Read("fly", "flying_speed"));
+
+            check_version();
         }
 
         public override void OnLevelWasLoaded(int level)
@@ -308,11 +322,154 @@ namespace TestMod
                 if (user_was_blocked) MelonModLogger.Log("[!!!] user \"" + user.field_Private_APIUser_0.displayName.ToString() + "\" was detected as potential crasher");
             }
         }
+
+        public partial class avi
+        {
+            [JsonProperty("name")]
+            public string Name { get; set; }
+
+            [JsonProperty("description")]
+            public string Description { get; set; }
+
+            [JsonProperty("authorId")]
+            public string AuthorId { get; set; }
+
+            [JsonProperty("authorName")]
+            public string AuthorName { get; set; }
+
+            [JsonProperty("imageUrl")]
+            public string ImageUrl { get; set; }
+
+            [JsonProperty("thumbnailImageUrl")]
+            public string ThumbnailImageUrl { get; set; }
+
+            [JsonProperty("assetUrl")]
+            public string AssetUrl { get; set; }
+
+            [JsonProperty("assetUrlObject")]
+            public UrlObject AssetUrlObject { get; set; }
+
+            [JsonProperty("tags")]
+            public object[] Tags { get; set; }
+
+            [JsonProperty("releaseStatus")]
+            public string ReleaseStatus { get; set; }
+
+            [JsonProperty("version")]
+            public long Version { get; set; }
+
+            [JsonProperty("unityPackageUrl")]
+            public string UnityPackageUrl { get; set; }
+
+            [JsonProperty("unityPackageUrlObject")]
+            public UrlObject UnityPackageUrlObject { get; set; }
+
+            [JsonProperty("unityVersion")]
+            public string UnityVersion { get; set; }
+
+            [JsonProperty("assetVersion")]
+            public long AssetVersion { get; set; }
+
+            [JsonProperty("platform")]
+            public string Platform { get; set; }
+
+            [JsonProperty("featured")]
+            public bool Featured { get; set; }
+
+            [JsonProperty("imported")]
+            public bool Imported { get; set; }
+
+            [JsonProperty("created_at")]
+            public DateTimeOffset CreatedAt { get; set; }
+
+            [JsonProperty("updated_at")]
+            public DateTimeOffset UpdatedAt { get; set; }
+
+            [JsonProperty("id")]
+            public string Id { get; set; }
+
+            [JsonProperty("unityPackages")]
+            public UnityPackage[] UnityPackages { get; set; }
+        }
+
+        public partial class UrlObject
+        {
+        }
+
+        public partial class UnityPackage
+        {
+            [JsonProperty("id")]
+            public string Id { get; set; }
+
+            [JsonProperty("assetUrl")]
+            public string AssetUrl { get; set; }
+
+            [JsonProperty("assetUrlObject")]
+            public UrlObject AssetUrlObject { get; set; }
+
+            [JsonProperty("unityVersion")]
+            public string UnityVersion { get; set; }
+
+            [JsonProperty("unitySortNumber")]
+            public long UnitySortNumber { get; set; }
+
+            [JsonProperty("assetVersion")]
+            public long AssetVersion { get; set; }
+
+            [JsonProperty("platform")]
+            public string Platform { get; set; }
+
+            [JsonProperty("created_at", NullValueHandling = NullValueHandling.Ignore)]
+            public DateTimeOffset? CreatedAt { get; set; }
+        }
+
+        public static string convert(WebResponse res)
+        {
+            string strResponse = "";
+            using (var stream = res.GetResponseStream())
+            using (var reader = new StreamReader(stream)) strResponse = reader.ReadToEnd();  
+            res.Dispose();
+            return strResponse;
+        }
+       
+        public static List<avi> get_public_avatars(string userid)
+        {
+            if (userid == "" || userid == null) return null;
+            var client = WebRequest.Create("https://api.vrchat.cloud/api/1/avatars?apiKey=JlE5Jldo5Jibnk5O5hTx6XVqsJu4WJ26&userId=" + userid);
+
+            ServicePointManager.ServerCertificateValidationCallback = (System.Object s, X509Certificate c, X509Chain cc, SslPolicyErrors ssl) => true;
+
+            var response = convert(client.GetResponse());
+
+            var list = JsonConvert.DeserializeObject<List<avi>>(response);
+
+            return list;
+        }
+        public static bool check_version()
+        {
+            var client = WebRequest.Create("https://raw.githubusercontent.com/kichiro1337/vrchat_useful_mod/master/version.txt");
+
+            ServicePointManager.ServerCertificateValidationCallback = (System.Object s, X509Certificate c, X509Chain cc, SslPolicyErrors ssl) => true;
+
+            var response = convert(client.GetResponse());
+            if (response.Contains(mod_version) == false)
+            {
+                MelonModLogger.Log("!!! There was a update for this mod !!!");
+                MelonModLogger.Log("!!! Please update the mod to enjoy new features and bug fixes !!!");
+                MelonModLogger.Log("https://github.com/kichiro1337/vrchat_useful_mod");
+                return false;
+            }
+            else
+            {
+                MelonModLogger.Log("Mod is up to date!");
+                return true;
+            }
+        }
         static float last_routine;
         public override void OnUpdate()
         {
             try
-            {
+            {         
                 if (sub_menu_open) menu_handler();
                 if (clone_mode) clone_check();
                 if (delete_portals) auto_delete_portals();
@@ -327,8 +484,9 @@ namespace TestMod
             }
             catch (Exception e)
             {
-                MelonModLogger.Log("Error in the main routine! " + e.Message + " in " + e.Source);
+                MelonModLogger.Log("Error in the main routine! " + e.Message + " in " + e.Source + " Stack: " + e.StackTrace);
             }
+            
         }
 
         private static void menu_handler()
@@ -578,10 +736,11 @@ namespace TestMod
 
         public static avatar_ui_button fav_btn;
         public static avatar_ui fav_list = new avatar_ui();
+        public static avatar_ui pub_list = new avatar_ui();
 
         public static void setup_fav_plus()
         {
-            fav_list = avatar_ui.setup("Favs+ (" + avatar_config.avatar_list.Count + ")" , 1);
+            fav_list = avatar_ui.setup("Favs+ (" + avatar_config.avatar_list.Count + ")" , 1, "Favs v2");
             avatar_utils.setup(avatar_config.avatar_list, fav_list.listing_avatars);
             for (var c =0;c<avatar_config.avatar_list.Count();c++)
             {
@@ -630,7 +789,65 @@ namespace TestMod
                 }
             });
         }
+        public static void setup_user_avatars_list()
+        {
+            pub_list = avatar_ui.setup("Public avatars for user <empty>", 1, "Pub avis");
+            pub_list.listing_text.text = "Public avatars for user <empty>";
 
+            List<avatar_struct> alist = new List<avatar_struct>
+            {  };
+
+            avatar_utils.setup(alist, pub_list.listing_avatars);
+
+            pub_list.ui_object.SetActive(false);
+        }
+
+        public static void update_public_user_list(string userid)
+        {
+            var res = get_public_avatars(userid);
+            if (res.Count == 0)
+            {
+                pub_list.listing_text.text = "No public avatars found!";
+                pub_list.listing_avatars.specificListIds.Clear();
+                pub_list.listing_avatars.field_Private_Dictionary_2_String_ApiAvatar_0.Clear();
+                return;
+            }
+            res.Reverse();
+            if (res.Count > 50)
+            {
+                var over_limit = res.Count - 50;
+                res.RemoveRange(50, over_limit);                
+            }
+
+            string author_name = "<empty>";
+            List<avatar_struct> alist = new List<avatar_struct>
+            { };
+            foreach (var obj in res)
+            {
+                author_name = obj.AuthorName;
+                alist.Add(new avatar_struct() { avatar_name = obj.Name, avatar_ident = obj.Id, avatar_preview = obj.ThumbnailImageUrl });
+            }
+
+            pub_list.listing_text.text = "Public avatars for " + author_name;
+            
+
+            avatar_utils.setup(alist, pub_list.listing_avatars);
+
+            for (var c = 0; c < alist.Count(); c++)
+            {
+                var x = alist[c];
+                var avatar = new ApiAvatar() { id = x.avatar_ident, name = x.avatar_name, thumbnailImageUrl = x.avatar_preview };
+                if (!pub_list.listing_avatars.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(x.avatar_ident))
+                {
+                    pub_list.listing_avatars.field_Private_Dictionary_2_String_ApiAvatar_0.Add(x.avatar_ident, avatar);
+                }
+            }
+
+            pub_list.listing_avatars.specificListIds = alist.Select(x => x.avatar_ident).ToArray();
+
+            pub_list.ui_object.SetActive(true);
+        }
+        public float last_public_call = 0;
         public override void VRChat_OnUiManagerInit()
         {
             var shortcutmenu = Notorious.Wrappers.GetQuickMenu().transform.Find("ShortcutMenu");
@@ -640,7 +857,24 @@ namespace TestMod
             {
                 setup_userinfo_button = true;
 
+                setup_user_avatars_list();
                 setup_fav_plus();
+
+                var t = avatar_ui_button.setup("Show public avatars", 320f, 9.6f);
+                var scale = t.game_object.transform.localScale;
+                t.game_object.transform.localScale = new Vector3(scale.x - 0.1f, scale.y - 0.1f, scale.z - 0.1f);
+                t.set_action(() =>
+                {
+                    if (Time.time > last_public_call)
+                    {
+                        last_public_call = Time.time + 65;
+                        MelonModLogger.Log("getting pubs for user: " + pub_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0.authorId + " / " + pub_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0.authorName);
+                        if (pub_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0 == null) return;
+                        if (pub_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0.authorId == "") return;
+                        update_public_user_list(pub_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0.authorId);
+                    }
+                    else MelonModLogger.Log("please wait for getting public avatars again! (1 minute)");
+                });
 
                 screensmenu = GameObject.Find("Screens").transform.Find("UserInfo");
                 var back_button = screensmenu.transform.Find("BackButton");
