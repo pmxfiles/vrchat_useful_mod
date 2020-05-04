@@ -49,7 +49,7 @@ namespace TestMod
 
     public class TestMod : MelonMod
     {
-        public static string mod_version = "15";
+        public static string mod_version = "16";
 
         public static bool fly_mode = false;
         public static bool clone_mode = true;
@@ -771,6 +771,16 @@ namespace TestMod
             fav_btn.set_action(() =>
             {
                 var avatar = fav_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0;
+
+                if (avatar.releaseStatus == null || fav_list.listing_avatars.avatarPedestal.field_Internal_ApiAvatar_0 == null || avatar.releaseStatus == "private")
+                {
+                    //should delete broken and unavailable avis
+
+                    avatar_config.avatar_list.RemoveAll(x => x.avatar_ident == avatar.id);
+                    avatar_utils.update_list(avatar_config.avatar_list.Select(x => x.avatar_ident), fav_list.listing_avatars);
+
+                    fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
+                }
                 if (avatar.releaseStatus == "public")
                 {
                     if (!avatar_config.avatar_list.Any(v => v.avatar_ident == avatar.id))                    {
@@ -786,7 +796,7 @@ namespace TestMod
                         fav_btn.ui_avatar_text.text = "Add to Fav+";
                         fav_list.listing_text.text = "Fav+ " + " Total (" + avatar_config.avatar_list.Count + ")";
                     }
-                }
+                }                
             });
         }
         public static void setup_user_avatars_list()
