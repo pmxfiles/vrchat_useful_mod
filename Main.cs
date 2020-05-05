@@ -1,4 +1,4 @@
-﻿using Harmony;
+using Harmony;
 using MelonLoader;
 using NET_SDK;
 using NET_SDK.Harmony;
@@ -37,6 +37,7 @@ using TestMod.remake.util;
 using TestMod.remake.btn;
 using TestMod.remake.funcs.game;
 using TestMod.remake.funcs.menu;
+using Org.BouncyCastle.Math.Raw;
 
 namespace TestMod
 {
@@ -51,7 +52,8 @@ namespace TestMod
 
     public class hashmod : MelonMod
     {
-        public static string mod_version = "16";
+        public static bool needs_update = false;
+        public static string mod_version = "18";
         public static bool fly_mode = false;
         public static bool clone_mode = true;
         public static bool delete_portals = false;
@@ -82,7 +84,7 @@ namespace TestMod
         {
             var ini = new IniFile("hashcfg.ini");
             avatar_config.load(); avatar_config.avatar_list.Reverse(); ini.setup();
-            utils.check_version();
+            needs_update = utils.check_version();
         }
         public override void OnLevelWasLoaded(int level)
         {
@@ -95,7 +97,8 @@ namespace TestMod
         public override void OnUpdate()
         {
             try
-            {         
+            {
+                menu.version_info();
                 if (sub_menu_open) menu.menu_toggle_handler();
                 if (clone_mode) direct_clone.direct_menu_clone();
                 if (delete_portals) antiportal.auto_delete_portals();
@@ -108,14 +111,14 @@ namespace TestMod
                         var thrd = new Thread((ThreadStart)anticrash.detect_crasher);
                         thrd.Start();
                     }
-                    if (info_plus_toggle) infoplus.info_plus();
-                    if (esp_players) visuals.esp_player();
+                    if (info_plus_toggle) infoplus.info_plus();                   
                 }
+                if (esp_players) visuals.esp_player();
             }
             catch (Exception e)
             {
                 MelonModLogger.Log("Error in the main routine! " + e.Message + " in " + e.Source + " Stack: " + e.StackTrace);
-            }            
+            }
         }        
         public override void OnFixedUpdate()
         {
@@ -143,7 +146,7 @@ namespace TestMod
             var shortcutmenu = utils.get_quick_menu().transform.Find("ShortcutMenu");
 
             var screensmenu = GameObject.Find("Screens").transform.Find("UserInfo");
-            if (!setup_userinfo_button && screensmenu != null)
+            if (!setup_userinfo_button && screensmenu != null && utils.get_quick_menu().transform.Find("ShortcutMenu/BuildNumText") != null)
             {
                 setup_userinfo_button = true;
 
@@ -173,7 +176,6 @@ namespace TestMod
                 {
                     var menu = GameObject.Find("Screens").transform.Find("UserInfo");
                     var userInfo = menu.transform.GetComponentInChildren<VRC.UI.PageUserInfo>();
-                    var plr_Pmgr = PlayerManager.Method_Public_Static_PlayerManager_0();
                     var found_player = utils.get_player(userInfo.user.id);
                     if (found_player == null)
                     {
@@ -188,7 +190,7 @@ namespace TestMod
                 clone_button_clonepub.transform.localPosition -= new Vector3(750, 0, 0);
                 clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Text>().text = $"Clone";
                 clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Button>().onClick = new UnityEngine.UI.Button.ButtonClickedEvent();
-                clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() => { social.do_clone_to_social();  }));
+                clone_button_clonepub.GetComponentInChildren<UnityEngine.UI.Button>().onClick.AddListener(new Action(() => { social.do_clone_to_social(); }));
 
                 clone_button_clone_favplus.gameObject.name = $"Clone F+";
                 clone_button_clone_favplus.transform.localPosition -= new Vector3(1000, 0, 0);
@@ -286,6 +288,7 @@ namespace TestMod
                             utils.toggle_outline(array[i].transform.Find("SelectRegion").GetComponent<Renderer>(), false);
                         }
                     }
+
                     foreach (VRC_Pickup pickup in Resources.FindObjectsOfTypeAll<VRC_Pickup>())
                     {
                         if (pickup.gameObject.transform.Find("SelectRegion"))
@@ -342,7 +345,7 @@ namespace TestMod
                     var locomotion = VRCPlayer.field_Internal_Static_VRCPlayer_0.GetComponent<LocomotionInputController>();
                     if (locomotion != null)
                     {
-                        /*speeds*/                        
+                        /*speeds*/
                         locomotion.runSpeed = 10f;
                         locomotion.walkSpeed = 8f;
                     }
@@ -382,7 +385,7 @@ namespace TestMod
                 new Action(() =>
                 {
                     var SelectedPlayer = utils.get_quick_menu().get_selected_player();
-                    VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position = SelectedPlayer.transform.position;                    
+                    VRCPlayer.field_Internal_Static_VRCPlayer_0.transform.position = SelectedPlayer.transform.position;
 
                 }),
                 new Action(() =>
