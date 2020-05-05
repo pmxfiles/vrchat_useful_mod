@@ -32,7 +32,7 @@ How to install;
 (Optional)
 
 If you get any error about the Assembly... you need to install the unhollowed managed files
-- Download https://drive.google.com/open?id=1647E5lIWw19IHe7YEdI496mR4HlJysB8
+- Download https://drive.google.com/open?id=1fonJQ09IVbw-2BxRTixeCHxvUQAmuCYw
 - Delete everything in the "MelonLoader\Managed" folder
 - Extract the 7z in the "MelonLoader\Managed" folder
 - Profit
