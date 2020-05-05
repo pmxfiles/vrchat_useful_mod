@@ -1,4 +1,4 @@
-﻿using Il2CppSystem.IO;
+using Il2CppSystem.IO;
 using Il2CppSystem.Threading;
 using MelonLoader;
 using Newtonsoft.Json;
@@ -79,7 +79,7 @@ namespace TestMod
             avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Clear();
             foreach (var a in arr) if (avilist.field_Private_Dictionary_2_String_ApiAvatar_0.ContainsKey(a) == false) { avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(a, null); }
             avilist.specificListIds = arr.ToArray();
-            avilist.Method_Protected_Virtual_Void_Int32_0(0); //not sure what this actually is for credits to sofar            
+            avilist.Method_Protected_Abstract_Virtual_New_Void_Int32_0(0);
         }
         public static void setup(List<avatar_struct> avatars, UiAvatarList avilist)
         {
@@ -94,7 +94,7 @@ namespace TestMod
                 }
             }
             avilist.specificListIds = avatars.Select(x => x.avatar_ident).ToArray();
-            avilist.Method_Protected_Virtual_Void_Int32_0(0);
+            avilist.Method_Protected_Abstract_Virtual_New_Void_Int32_0(0);
         }
         public static void add_to_list(ApiAvatar api)
         {
@@ -119,7 +119,7 @@ namespace TestMod
             avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Clear();
             foreach (var a in arr) avilist.field_Private_Dictionary_2_String_ApiAvatar_0.Add(a, null);
             avilist.specificListIds = arr.ToArray();
-            avilist.Method_Protected_Virtual_Void_Int32_0(0); //not sure what this actually is for credits to sofar
+            avilist.Method_Protected_Abstract_Virtual_New_Void_Int32_0(0);
         }
     }
     public class avatar_ui
