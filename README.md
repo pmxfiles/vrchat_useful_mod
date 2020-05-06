@@ -1,9 +1,13 @@
 # vrchat_useful_mod
-This mod is made to be used with MelonLoader. (https://github.com/HerpDerpinstine/MelonLoader)
+**This mod is made to be used with MelonLoader. (https://github.com/HerpDerpinstine/MelonLoader)**
+
+**Please make sure you have MelonLoader installed prior to installing my mod**
+**If you need help installing my mod please watch this clip on how to install it** 
+https://streamable.com/vom3jl
 
 If you are having issues please use the "Issues" function on github to create a new issue, same for recommendations.
 
-Features of this mod; (screenshots/installation instructions below)
+**Features of this mod; (screenshots/installation instructions below)**
 - Flying / NoClip (Oculus compatible, right thumbstick up/down) (Desktop Q & E)
 - Force cloning (public)
 - Clone button in social
@@ -23,7 +27,7 @@ Features of this mod; (screenshots/installation instructions below)
 - Silent avatar saving from social & direct selection - to Fav+
 - Ability to show a creators public avatars in-game and apply/fav them directly!
 
-How to install;
+**How to install;**
 - Go to the release page; https://github.com/kichiro1337/vrchat_useful_mod/releases
 - Download the DLL on the latest release
 - Put the DLL into the "Mods" folder in your VRChat installation
