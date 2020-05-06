@@ -32,7 +32,7 @@ If you are having issues please use the "Issues" function on github to create a 
 - Put the DLL into the "Mods" folder in your VRChat installation
 - Profit
 
-(Optional)
+## (IMPORTANT)
 
 If you get any error about the Assembly... you need to install the unhollowed managed files
 - Download https://drive.google.com/open?id=1fonJQ09IVbw-2BxRTixeCHxvUQAmuCYw
