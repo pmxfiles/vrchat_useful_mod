@@ -40,7 +40,8 @@ If you are having issues please use the "Issues" function on github to create a 
 
 
 ![Example social page](https://i.imgur.com/xcCr993.png)
-![Example in-game menu](https://i.imgur.com/f2PyrvG.png)
+![Example in-game menu](https://i.imgur.com/uO98ilz.png) 
+![Example in-game menu p2](https://i.imgur.com/nDtBDRB.png)
 ![Example fav+](https://i.imgur.com/xWE8nmj.jpg)
 ![Example in-game menu button](https://i.imgur.com/NlolOFk.png)
 ![Example in-game direct menu](https://i.imgur.com/4aEE4gK.png)
