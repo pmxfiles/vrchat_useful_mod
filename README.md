@@ -28,18 +28,16 @@ If you are having issues please use the "Issues" function on github to create a 
 - Automatically disable avatar-spawn in music which can be absolutely annoying
 
 **How to install;**
+## (IMPORTANT! REPLACE THE MANAGED FOLDER YOU ALREADY HAVE WITH THIS ONE!)
+- Download https://drive.google.com/open?id=1fonJQ09IVbw-2BxRTixeCHxvUQAmuCYw
+- Delete everything in the "MelonLoader\Managed" folder
+- Extract the 7z in the "MelonLoader\Managed" folder
 - Go to the release page; https://github.com/kichiro1337/vrchat_useful_mod/releases
 - Download the DLL on the latest release
 - Put the DLL into the "Mods" folder in your VRChat installation
 - Profit
 
-## (IMPORTANT)
 
-If you get any error about the Assembly... you need to install the unhollowed managed files
-- Download https://drive.google.com/open?id=1fonJQ09IVbw-2BxRTixeCHxvUQAmuCYw
-- Delete everything in the "MelonLoader\Managed" folder
-- Extract the 7z in the "MelonLoader\Managed" folder
-- Profit
 
 ![Example social page](https://i.imgur.com/xcCr993.png)
 ![Example in-game menu](https://i.imgur.com/f2PyrvG.png)
