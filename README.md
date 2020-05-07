@@ -1,6 +1,8 @@
 # vrchat_useful_mod
 **This mod is made to be used with ([MelonLoader](https://github.com/HerpDerpinstine/MelonLoader)).**
 
+## **This is a free open-source client for VRChat - there is no paid version of this mod!**
+
 # **If you need help installing my mod please watch this clip on how to install it** 
 ## [Click here for a video guide](https://streamable.com/vom3jl)
 
