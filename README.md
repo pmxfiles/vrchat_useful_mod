@@ -28,6 +28,8 @@ If you are having issues please use the "Issues" function on github to create a 
 - Silent avatar saving from social & direct selection - to Fav+
 - Ability to show a creators public avatars in-game and apply/fav them directly!
 - Automatically disable avatar-spawn in music which can be absolutely annoying
+- Ability to add avatars to Fav+ with just the avatar ID
+- Ability to check a users public avatars by just the user ID
 
 **How to install;**
 ## (REPLACE THE MANAGED FOLDER YOU ALREADY HAVE WITH THIS ONE - OCULUS CLIENT IS NOT SUPPORTED FULLY)
