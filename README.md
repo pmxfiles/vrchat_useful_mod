@@ -30,7 +30,7 @@ If you are having issues please use the "Issues" function on github to create a 
 - Automatically disable avatar-spawn in music which can be absolutely annoying
 
 **How to install;**
-## (IMPORTANT! REPLACE THE MANAGED FOLDER YOU ALREADY HAVE WITH THIS ONE!)
+## (REPLACE THE MANAGED FOLDER YOU ALREADY HAVE WITH THIS ONE - OCULUS CLIENT IS NOT SUPPORTED FULLY)
 - Download https://drive.google.com/open?id=1fonJQ09IVbw-2BxRTixeCHxvUQAmuCYw
 - Delete everything in the "MelonLoader\Managed" folder
 - Extract the 7z in the "MelonLoader\Managed" folder
@@ -38,7 +38,6 @@ If you are having issues please use the "Issues" function on github to create a 
 - Download the DLL on the latest release
 - Put the DLL into the "Mods" folder in your VRChat installation
 - Profit
-
 
 
 ![Example social page](https://i.imgur.com/xcCr993.png)
