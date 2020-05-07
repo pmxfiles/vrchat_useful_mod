@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -156,8 +156,17 @@ namespace TestMod.remake.funcs.game
                     if (particle_renderer.enabled == false) continue;
                     particle_count += sys.particleCount; particle_max += sys.maxParticles;
                 }
-                //MelonModLogger.Log("user \"" + user.field_APIUser_0.displayName + "\" has " + particle_count + " particle_count");
-                //MelonModLogger.Log("user \"" + user.field_APIUser_0.displayName + "\" has " + particle_max + " particle_max");
+                //looks if user has spawn audio playing god i hate this everyone must die who uses them
+                if (hashmod.anti_spawn_music)
+                {
+                    var audio_components = user.GetComponentsInChildren<AudioSource>(true);
+                    foreach (var obj in audio_components)
+                    {
+                        if (obj.isPlaying == false) continue;
+                        obj.Stop();
+                        MelonModLogger.Log("[!!!] disabled spawn-sound for user \"" + user.field_Private_APIUser_0.displayName.ToString() + "\" cuz fuck this guy");
+                    }
+                }
                 if (particle_max >= hashmod.max_particles)
                 {
                     disable_player();
