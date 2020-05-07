@@ -14,7 +14,7 @@ If you are having issues please use the "Issues" function on github to create a 
 - Colored names (red=private/green=public avatar)
 - Info+ which shows avatar status/blocked in social
 - Anti-portal (lobby wide)
-- Player pill ESP
+- Player pill ESP (with RBG)
 - Teleport to player in social or on selection
 - Enables jumping where jumping is disabled by the mapper
 - Auto-saves/loads options for ESP, Clone mode, AntiPortal, Info+, AntiCrasher, IgnoreFriends
@@ -25,6 +25,7 @@ If you are having issues please use the "Issues" function on github to create a 
 - Fav+ which allows infinite avatars to be saved (credits to 404, this is a refactored version of his)
 - Silent avatar saving from social & direct selection - to Fav+
 - Ability to show a creators public avatars in-game and apply/fav them directly!
+- Automatically disable avatar-spawn in music which can be absolutely annoying
 
 **How to install;**
 - Go to the release page; https://github.com/kichiro1337/vrchat_useful_mod/releases
